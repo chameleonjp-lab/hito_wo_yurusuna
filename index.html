@@ -136,9 +136,25 @@
 
 .compareGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}.compareGrid>div{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:9px;font-size:12px;line-height:1.55}.compareGrid b{color:#ffdf7e}
 
+  .cancelBuild{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:none;z-index:9;background:#6b2730;color:#fff2f2;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:10px 16px;font-size:13px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.45);}
+  .cancelBuild.show{display:block;}
+  .cancelBuild:active{transform:translateX(-50%) translateY(1px);}
+
+  .bossBar{position:absolute;left:50%;transform:translateX(-50%);top:6px;width:calc(100% - 16px);max-width:560px;z-index:6;display:none;pointer-events:none;background:rgba(10,13,18,.82);border:1px solid rgba(255,107,107,.55);border-radius:12px;padding:5px 9px 7px;box-shadow:0 6px 18px rgba(0,0,0,.45);backdrop-filter:blur(4px);}
+  .bossBar.show{display:block;}
+  .bossBarHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}
+  .bossName{font-size:13px;font-weight:900;color:#ffd9d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .bossHpText{font-size:12px;font-weight:800;color:#ffe19a;white-space:nowrap;}
+  .bossBarTrack{height:12px;border-radius:999px;background:rgba(0,0,0,.55);overflow:hidden;border:1px solid rgba(255,255,255,.12);}
+  .bossBarFill{height:100%;width:100%;background:linear-gradient(90deg,#ff8f5d,#ff5b5b);transition:width .1s linear;}
+  .bossBar[data-tier="hi"] .bossBarFill{background:linear-gradient(90deg,#ffd166,#ff7b5b);}
+  .bossBar[data-tier="mid"] .bossBarFill{background:linear-gradient(90deg,#ff8f5d,#ff5b5b);}
+  .bossBar[data-tier="lo"] .bossBarFill{background:linear-gradient(90deg,#ff5b5b,#c0142b);}
+
   @media (prefers-reduced-motion: reduce){
     .pill.danger{animation:none;}
     .sheet{transition:none;}
+    .bossBarFill{transition:none;}
   }
 
 </style>
@@ -225,8 +241,13 @@
     </div>
     <div class="stageWrap" id="stageWrap">
       <canvas id="stage"></canvas>
+      <div id="bossBar" class="bossBar" aria-hidden="true">
+        <div class="bossBarHead"><span id="bossName" class="bossName"></span><span id="bossHpText" class="bossHpText"></span></div>
+        <div class="bossBarTrack"><div id="bossHpFill" class="bossBarFill"></div></div>
+      </div>
       <div id="countOverlay" class="countOverlay"></div>
       <div id="toast" class="toast"></div>
+      <button id="btnCancelBuild" class="cancelBuild" type="button" aria-label="設置をやめる">✕ 設置をやめる</button>
     </div>
     <div id="sheet" class="sheet closed">
       <div class="sheetHeader">
@@ -330,7 +351,7 @@ const TOWERS = {
   sniper:  {name:"狙撃", emoji:"📡", cost:160, upgrade:240, unlock:6,  role:"大物に強い", detail:"🐊🐃🐘🐉に強い。🐕🐈など群れには弱い。", range:3.65, interval:1.85, dmg:150, type:"phys", targets:["strong","boss","first"], defaultTarget:"strong"},
   breaker: {name:"装甲破砕",emoji:"🔨",cost:140, upgrade:210, unlock:7,  role:"装甲に強い", detail:"🦏🐃🐘🐉の防御を崩す。効果は重複しない。🐁🐇🐕には弱い。", range:2.35, interval:1.05, dmg:65, type:"break", debuff:4.0, targets:["armor","strong","boss"], defaultTarget:"armor"},
   dot:     {name:"継続", emoji:"🔥", cost:150, upgrade:220, unlock:11, role:"回復に強い", detail:"燃焼で数秒間じわじわ削る。燃焼は重複しない。🦍🦏に有効。", range:2.30, interval:1.00, dmg:16, type:"true", burnDps:18, burnDur:4.2, targets:["highhp","regen","armor"], defaultTarget:"regen"},
-  pierce:  {name:"貫通", emoji:"⚡", cost:190, upgrade:290, unlock:15, role:"直線に強い", detail:"長い直線に並んだ敵をまとめて削る。曲がり角や🐘🐉単体には弱い。貫くほど威力が下がる。", range:3.85, interval:1.00, dmg:60, type:"phys", pierce:true, targets:["first","line"], defaultTarget:"line"},
+  pierce:  {name:"貫通", emoji:"⚡", cost:190, upgrade:290, unlock:15, role:"直線に強い", detail:"標的に向かって直線の貫通ビームを撃つ。長い直線に並んだ敵をまとめて削る。曲がり角や🐘🐉単体には弱い。貫くほど威力が下がる。", range:3.85, interval:1.00, dmg:60, type:"phys", pierce:true, targets:["first","line"], defaultTarget:"line"},
   support: {name:"支援", emoji:"🔮", cost:180, upgrade:270, unlock:18, role:"周囲を強化", detail:"上下左右の近い武器を強くする。単体では攻撃しない。支援効果は重複しない。", range:1.05, interval:0, dmg:0, type:"buff", buffDmg:0.16, buffRate:0.12, targets:[], defaultTarget:null}
 };
 const TOWER_ORDER = ["rapid","mortar","ice","sniper","breaker","dot","pierce","support"];
@@ -1357,7 +1378,40 @@ function drawRangeCells(g, type, col, row, st, mode="tower"){
     g.fillText("死角", tc.x, tc.y + 3);
   }
 }
+// 「設置をやめる」ボタンは設置予定中のみ表示する（pendingBuild に追従）。
+function syncBuildCancelBtn(){
+  const btn = document.getElementById("btnCancelBuild");
+  if(!btn) return;
+  const show = !!(game && game.pendingBuild && !game.over);
+  if(btn.classList.contains("show") !== show) btn.classList.toggle("show", show);
+}
+// ボスが盤面にいる間だけ大型HPバーを表示する。複数いる場合はゴールに最も近い個体を出す。
+function syncBossBar(){
+  const bar = document.getElementById("bossBar");
+  if(!bar) return;
+  let boss = null;
+  if(game && !game.over){
+    for(const e of game.enemies){
+      if(e.boss && !e.dead && !e.reached && (!boss || e.dist > boss.dist)) boss = e;
+    }
+  }
+  if(!boss){
+    if(bar.classList.contains("show")){ bar.classList.remove("show"); bar.setAttribute("aria-hidden","true"); }
+    return;
+  }
+  if(!bar.classList.contains("show")){ bar.classList.add("show"); bar.setAttribute("aria-hidden","false"); }
+  const ratio = Math.max(0, Math.min(1, boss.hp / boss.maxHp));
+  setText(document.getElementById("bossName"), `${boss.emoji} ${boss.name}`);
+  setText(document.getElementById("bossHpText"), `${fmt(Math.ceil(boss.hp))} / ${fmt(boss.maxHp)}（${Math.round(ratio*100)}%）`);
+  const fill = document.getElementById("bossHpFill");
+  const w = (Math.round(ratio * 1000) / 10) + "%";
+  if(fill._w !== w){ fill.style.width = w; fill._w = w; }
+  const tier = ratio > 0.5 ? "hi" : ratio > 0.2 ? "mid" : "lo";
+  if(bar.dataset.tier !== tier) bar.dataset.tier = tier;
+}
 function render(){
+  syncBuildCancelBtn();
+  syncBossBar();
   if(!game){
     ctx.clearRect(0,0,BOARD_W,BOARD_H);
     return;
@@ -2023,6 +2077,12 @@ $("guideTabEnemies").onclick = () => setGuideTab("enemies");
 $("guideModal").addEventListener("click", (e) => { if(e.target && e.target.id === "guideModal") closeGuideModal(); });
 $("rulesClose").onclick = closeRulesModal;
 $("rulesModal").addEventListener("click", (e) => { if(e.target && e.target.id === "rulesModal") closeRulesModal(); });
+$("btnCancelBuild").onclick = () => {
+  if(!game || !game.pendingBuild) return;
+  closeSheet(true);   // pendingBuild・選択状態をまとめて解除
+  render();
+  toast("設置をやめました");
+};
 $("btnPause").onclick = () => {
   if(!game || game.over) return;
   game.paused = !game.paused;
