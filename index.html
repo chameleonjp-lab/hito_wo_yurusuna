@@ -1,0 +1,1993 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1, minimum-scale=1">
+<meta name="format-detection" content="telephone=no">
+<title>ヒトを許すな！</title>
+<style>
+  :root{
+    --bg:#0a0d12;
+    --panel:#121824;
+    --panel2:#182132;
+    --line:#2a3550;
+    --text:#f4efe5;
+    --muted:#b9b1a3;
+    --accent:#f0b74a;
+    --good:#69d58a;
+    --bad:#ff6b6b;
+    --warn:#ffce5d;
+    --blue:#8bc7ff;
+    --shadow:0 -12px 28px rgba(0,0,0,.36);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;user-select:none;-webkit-user-select:none;overscroll-behavior:none;}
+  body{position:fixed;inset:0;touch-action:manipulation;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+  button,input{font:inherit;}
+  button{border:0;border-radius:14px;padding:12px 14px;background:#26344c;color:var(--text);font-weight:800;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+  button:active{transform:translateY(1px);}
+  button.primary{background:linear-gradient(180deg,#f2bd54,#c98720);color:#1b1205;}
+  button.good{background:#235e3c;color:#eaffef;}
+  button.bad{background:#6b2730;color:#fff2f2;}
+  button.ghost{background:#1a2335;color:#d8d1c7;border:1px solid #33405e;}
+  button:disabled{opacity:.45;filter:grayscale(.25);transform:none;}
+  .screen{display:none;width:100%;height:100%;}
+  .screen.active{display:flex;}
+  .home,.name,.result{align-items:center;justify-content:center;padding:18px;background:radial-gradient(circle at 50% 0%,#24314b 0,#0a0d12 52%);}
+  .card{width:min(560px,100%);max-height:100%;overflow:auto;background:rgba(18,24,36,.92);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:20px;box-shadow:0 18px 50px rgba(0,0,0,.4);}
+  h1{margin:0 0 10px;font-size:34px;letter-spacing:.02em;line-height:1.15;}
+  h2{margin:0 0 10px;font-size:24px;}
+  p{line-height:1.75;color:#e5dece;}
+  .small{font-size:12px;color:var(--muted);line-height:1.5;}
+  .btns{display:grid;gap:10px;margin-top:14px;}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  input{width:100%;padding:14px;border-radius:14px;border:1px solid #34415c;background:#0e1420;color:var(--text);font-size:18px;}
+
+  .gameRoot{height:100%;width:100%;display:flex;flex-direction:column;background:#070a0f;overflow:hidden;padding-top:env(safe-area-inset-top);position:relative;}
+  .hud{flex:0 0 auto;display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:7px 8px 5px;background:#101723;border-bottom:1px solid rgba(255,255,255,.06);}
+  .hudMain{min-width:0;}
+  .hudTitle{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hudVals{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px;}
+  .pill{font-size:12px;font-weight:800;background:#1c2638;border:1px solid #2d3c59;border-radius:999px;padding:4px 8px;white-space:nowrap;}
+  .pill.money{color:#ffdf7e;}
+  .pill.wave{color:#cde6ff;}
+  .pill.danger{background:#4c161b;border-color:#92323d;color:#ffd9d9;animation:pulse .55s infinite alternate;}
+  @keyframes pulse{from{opacity:.72}to{opacity:1}}
+  .hudBtn{padding:8px 10px;border-radius:11px;font-size:12px;min-width:46px;}
+  .notice{flex:0 0 auto;min-height:45px;padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.06);background:#0d1320;color:#e9dfcf;font-size:12px;line-height:1.35;display:flex;gap:8px;align-items:center;justify-content:space-between;}
+  .notice .main{min-width:0;}
+  .notice b{color:#ffe19a;}
+  .notice .advice{color:#a8d8ff;}
+
+  .stageWrap{position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:flex-start;justify-content:center;padding:5px;background:linear-gradient(#080b10,#0a1018);overflow:hidden;}
+  canvas#stage{display:block;max-width:100%;max-height:100%;border-radius:14px;background:#0d131d;box-shadow:0 6px 24px rgba(0,0,0,.35);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+  .countOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:72px;font-weight:900;background:rgba(0,0,0,.48);z-index:5;text-shadow:0 4px 20px #000;}
+  .countOverlay.show{display:flex;}
+  .toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(0,0,0,.74);border:1px solid rgba(255,255,255,.15);padding:9px 12px;border-radius:999px;color:#fff;font-size:13px;opacity:0;transition:.18s;z-index:8;pointer-events:none;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;}
+  .toast.show{opacity:1;}
+
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:linear-gradient(180deg,rgba(23,32,52,.97),rgba(16,23,35,.99));border-top:1px solid rgba(255,255,255,.12);box-shadow:0 -12px 34px rgba(0,0,0,.45);padding:9px 9px calc(10px + env(safe-area-inset-bottom));min-height:42dvh;max-height:56dvh;transition:transform .18s ease,opacity .18s ease;overflow:hidden;border-radius:18px 18px 0 0;transform:translateY(0);opacity:1;pointer-events:auto;backdrop-filter:blur(10px);touch-action:pan-y;}
+  .sheet.closed{transform:translateY(calc(100% + 12px));opacity:0;pointer-events:none;min-height:44px;}
+  .sheet *{touch-action:pan-y;}
+  .sheetHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px;}
+  .sheetTitle{font-weight:900;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sheetSub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sheetContent{margin-top:8px;max-height:calc(56dvh - 64px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;display:grid;gap:8px;padding-bottom:12px;}
+  .sheet.closed .sheetContent{display:none;}
+  .miniBtn{padding:7px 10px;border-radius:10px;font-size:12px;}
+  .weaponList{display:grid;grid-template-columns:1fr;gap:8px;}
+  .weaponItem{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;background:#1a2335;border:1px solid #33405e;border-radius:14px;padding:9px;min-height:58px;touch-action:manipulation;}
+  .weaponItem.selected{border-color:#f0b74a;background:linear-gradient(180deg,#243250,#1b2740);box-shadow:0 0 0 2px rgba(240,183,74,.25) inset;}
+  .weaponItem.disabled{opacity:.48;}
+  .weaponEmoji{font-size:26px;width:34px;text-align:center;}
+  .weaponName{font-weight:900;font-size:14px;}
+  .weaponDesc{font-size:12px;color:#c9c1b3;line-height:1.35;margin-top:2px;}
+  .weaponCost{font-weight:900;color:#ffdf7e;font-size:13px;white-space:nowrap;}
+  .actionGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .targetGrid{display:flex;gap:7px;flex-wrap:wrap;}
+  .targetGrid button.on{background:#f0b74a;color:#161006;}
+  .infoBox{background:#0e1420;border:1px solid #2d3c59;border-radius:14px;padding:10px;font-size:13px;line-height:1.55;color:#e9dfcf;}
+  .muted{color:var(--muted);} .tagRow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.tag{display:inline-block;border:1px solid #34415c;background:#162238;border-radius:999px;padding:3px 8px;font-size:12px;color:#e9dfcf}.hpBarBox{height:9px;border-radius:999px;background:rgba(0,0,0,.55);overflow:hidden;margin:8px 0}.hpBarFill{height:100%;background:#69d58a}.warnText{color:#ffdf7e;font-weight:800;}
+
+  .resultStats{display:grid;gap:8px;margin:14px 0;}
+  .stat{display:flex;justify-content:space-between;gap:10px;background:#0e1420;border:1px solid #2d3c59;border-radius:12px;padding:10px;}
+  .stat b{color:#ffdf7e;}
+  .resultMessage{background:#0e1420;border:1px solid #33405e;border-radius:14px;padding:12px;line-height:1.7;color:#e9dfcf;}
+
+  @media (min-width:560px){
+    .weaponList{grid-template-columns:1fr 1fr;}
+    .sheet{max-height:54dvh;min-height:40dvh;}
+    .sheetContent{max-height:calc(54dvh - 64px);}
+  }
+
+  @media (max-height:700px){
+    .sheet{max-height:54dvh;min-height:40dvh;}
+    .sheetContent{max-height:calc(54dvh - 64px);}
+  }
+
+  .guideBackdrop{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.58);padding:16px;backdrop-filter:blur(8px);}
+  .guideBackdrop.show{display:flex;}
+  .guideModal{width:min(560px,100%);max-height:min(82dvh,760px);background:linear-gradient(180deg,rgba(23,32,52,.98),rgba(14,20,31,.99));border:1px solid rgba(255,255,255,.13);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;overflow:hidden;}
+  .guideHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .guideHead h2{margin:0;font-size:20px;}
+  .guideTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .guideTab{padding:10px;border-radius:12px;background:#1a2335;border:1px solid #33405e;color:#d8d1c7;font-weight:900;}
+  .guideTab.on{background:#f0b74a;color:#181006;border-color:#f0b74a;}
+  .guideContent{padding:12px 14px 16px;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:grid;gap:10px;}
+  .guideIntro{font-size:13px;line-height:1.65;color:#d8d1c7;background:#0e1420;border:1px solid #2d3c59;border-radius:14px;padding:10px;}
+  .guideItem{display:grid;grid-template-columns:auto 1fr;gap:10px;background:#101827;border:1px solid #31405d;border-radius:16px;padding:11px;}
+  .guideIcon{font-size:30px;width:34px;text-align:center;line-height:1.1;}
+  .guideName{font-weight:900;font-size:15px;margin-bottom:4px;}
+  .guideText{font-size:13px;line-height:1.55;color:#e5dece;}
+  .guideMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;}
+  .guideBadge{font-size:12px;border-radius:999px;padding:3px 8px;background:#18243a;border:1px solid #33405e;color:#d8d1c7;}
+
+.compareGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}.compareGrid>div{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:9px;font-size:12px;line-height:1.55}.compareGrid b{color:#ffdf7e}
+
+</style>
+</head>
+<body>
+<section id="homeScreen" class="screen home active">
+  <div class="card">
+    <h1>ヒトを許すな！</h1>
+    <p>ヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。</p>
+    <div class="infoBox">
+      空きマスをタップすると武器一覧が出ます。<br>
+      武器をタップすると、強化・売却・狙い方を変えられます。<br>
+      敵が1体でも👨‍🌾に到達したら負け。30波を守り切れば勝ちです。
+    </div>
+    <div class="btns">
+      <button id="btnStart" class="primary">ゲーム開始</button>
+      <button id="btnRules" class="ghost">ルール説明</button>
+      <button id="btnGuide" class="ghost">武器・動物</button>
+      <button id="btnShareHome" class="ghost">ゲームをシェア</button>
+      <button id="btnOther" class="ghost">他のゲームで遊ぶ</button>
+    </div>
+  </div>
+</section>
+
+<div id="guideModal" class="guideBackdrop" aria-hidden="true">
+  <div class="guideModal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <div class="guideHead">
+      <h2 id="guideTitle">武器・動物</h2>
+      <button id="guideClose" class="miniBtn ghost">閉じる</button>
+    </div>
+    <div class="guideTabs">
+      <button id="guideTabTowers" class="guideTab on" data-guide-kind="towers">武器</button>
+      <button id="guideTabEnemies" class="guideTab" data-guide-kind="enemies">動物</button>
+    </div>
+    <div id="guideContent" class="guideContent"></div>
+  </div>
+</div>
+
+<section id="nameScreen" class="screen name">
+  <div class="card">
+    <h2>名前を入力</h2>
+    <p>ランキングに使う名前です。この端末に保存され、次回も表示されます。未入力なら「名無しの守り手」になります。</p>
+    <input id="nameInput" maxlength="16" placeholder="名前">
+    <div class="btns">
+      <button id="btnNameOk" class="primary">この名前で始める</button>
+      <button id="btnNameBack" class="ghost">戻る</button>
+    </div>
+  </div>
+</section>
+
+<section id="gameScreen" class="screen">
+  <div class="gameRoot">
+    <div class="hud">
+      <div class="hudMain">
+        <div class="hudTitle">ヒトを許すな！</div>
+        <div class="hudVals">
+          <span class="pill wave" id="wavePill">第1波</span>
+          <span class="pill money" id="moneyPill">資金 0</span>
+          <span class="pill" id="statusPill">準備</span>
+        </div>
+      </div>
+      <button id="btnPause" class="hudBtn ghost">⏸</button>
+      <button id="btnSpeed" class="hudBtn ghost">1倍</button>
+    </div>
+    <div class="notice">
+      <div class="main" id="nextInfo">次の波を準備中。</div>
+      <div class="advice" id="adviceInfo"></div>
+    </div>
+    <div class="stageWrap" id="stageWrap">
+      <canvas id="stage"></canvas>
+      <div id="countOverlay" class="countOverlay"></div>
+      <div id="toast" class="toast"></div>
+    </div>
+    <div id="sheet" class="sheet closed">
+      <div class="sheetHeader">
+        <div style="min-width:0">
+          <div class="sheetTitle" id="sheetTitle">マスをタップして配置</div>
+          <div class="sheetSub" id="sheetSub">空きマスで武器を選べます</div>
+        </div>
+        <button id="btnSheetClose" class="miniBtn ghost">閉じる</button>
+      </div>
+      <div id="sheetContent" class="sheetContent"></div>
+    </div>
+  </div>
+</section>
+
+<section id="resultScreen" class="screen result">
+  <div class="card">
+    <h1 id="resultTitle">結果</h1>
+    <div id="resultMessage" class="resultMessage"></div>
+    <div id="resultStats" class="resultStats"></div>
+    <p id="rankStatus" class="small">ランキング登録：確認中</p>
+    <div id="rankingBox" class="resultStats"></div>
+    <div class="btns">
+      <button id="btnRetry" class="primary">もう一度プレイ</button>
+      <button id="btnHome" class="ghost">ホームへ戻る</button>
+      <button id="btnShareResult" class="ghost">結果をシェア</button>
+      <button id="btnOtherResult" class="ghost">他のゲームで遊ぶ</button>
+    </div>
+  </div>
+</section>
+
+<script>
+"use strict";
+
+/* ==========================================================================
+   ヒトを許すな！
+   - 1ファイル完結
+   - 下部メニュー方式
+   - 入口保護、段階解放、危険表示、クリア波数重視スコア
+   - v10：敵数増加・HP再調整・資金再設計
+   ========================================================================== */
+
+const GAME_SLUG = "hito_wo_yurusuna";
+const GAME_TITLE = "ヒトを許すな！";
+const PUBLIC_URL = "https://chameleonjp.codeberg.page/hito_wo_yurusuna/";
+const CLIENT_VERSION = "hito_wo_yurusuna_v10_9_common_ranking_20260619";
+
+// カメレオンJP共通ランキング接続設定。Publishable keyのみを使用し、secret keyは使わない。
+const SUPABASE_URL = "https://mlpnjgezrnhdxsxolyzj.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM";
+const PLAYER_NAME_KEY = "hito_wo_yurusuna_player_name";
+
+const COLS = 9;
+const ROWS = 15;
+const PATH = [
+  [1,0],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
+  [7,2],[7,3],[7,4],
+  [6,4],[5,4],[4,4],[3,4],[2,4],[1,4],
+  [1,5],[1,6],[1,7],
+  [2,7],[3,7],[4,7],[5,7],[6,7],[7,7],
+  [7,8],[7,9],[7,10],
+  [6,10],[5,10],[4,10],[3,10],[2,10],[1,10],
+  [1,11],[1,12],[1,13],[1,14]
+];
+const PATH_KEYS = new Set(PATH.map(([c,r]) => `${c},${r}`));
+const PATH_LEN = PATH.length - 1;
+const IMMUNE_DIST = 1.0;      // 出現直後の最初の1マスだけを保護する
+const FLAG_DIST = PATH_LEN - 4.0;  // 🚩は👨‍🌾の4マス手前へ移動
+const DANGER_DIST = FLAG_DIST;
+const START_MONEY = 220;
+const SPAWN_GAP = 0.62;
+const SELL_RATE = 0.70;
+const UPGRADE_MAX = 2;
+const BOSS_HP = {10:9000, 20:22000, 30:100000};
+const MAX_ACTIVE_ENEMIES = 60;
+const DOUBLE_SPAWN_TYPES = new Set(["mouse", "rabbit", "dog", "cat"]);
+
+const TARGET_LABELS = {
+  first:"先頭", fast:"高速", weak:"最弱", strong:"最強", boss:"ボス", dense:"密集",
+  split:"分裂持ち", highhp:"高HP", regen:"回復持ち", armor:"装甲持ち", buffalo:"🐃", line:"直線上"
+};
+
+const ENEMIES = {
+  mouse:   {name:"ねずみ", emoji:"🐁", hp:50,  sp:1.00, reward:5,  role:"基本敵", tip:"🏹で倒しやすい。", leakHint:"小型への対策が足りませんでした。", weak:{rapid:1.35}, resist:{sniper:0.55}},
+  rabbit:  {name:"うさぎ", emoji:"🐇", hp:45,  sp:1.85, reward:6,  role:"快速", tip:"速い。❄️か🏹が有効。", leakHint:"速い敵への対策が足りませんでした。", weak:{rapid:1.25, ice:1.15}, resist:{sniper:0.50, mortar:0.70, dot:0.20}},
+  dog:     {name:"いぬ",   emoji:"🐕", hp:60,  sp:1.05, reward:6,  role:"群れ", tip:"群れで来る。💣が有効。", leakHint:"群れへの対策が足りませんでした。", weak:{mortar:1.50, pierce:1.20}, resist:{sniper:0.55, ice:0.80}},
+  cat:     {name:"ねこ",   emoji:"🐈", hp:110, sp:1.05, reward:11, role:"分裂", tip:"倒すと🐈が増える。💣や🏹が必要。", leakHint:"分裂した敵の処理が足りませんでした。", split:2, weak:{mortar:1.45, rapid:1.15}, resist:{sniper:0.65, ice:0.80}},
+  kitten:  {name:"子ねこ", emoji:"🐈", hp:35,  sp:1.35, reward:2,  role:"分裂後", tip:"小さく速い。🏹が有効。", leakHint:"分裂後の子ねこに抜けられました。", weak:{rapid:1.30, mortar:1.10}, resist:{sniper:0.65}},
+  tiger:   {name:"とら",   emoji:"🐅", hp:260, sp:0.95, reward:18, role:"加速", tip:"進むほど速くなる。❄️で止めたい。", leakHint:"加速する敵への対策が足りませんでした。", accel:true, weak:{ice:1.20, rapid:1.20, pierce:1.10}, resist:{dot:0.65, mortar:0.75}},
+  croc:    {name:"ワニ",   emoji:"🐊", hp:340, sp:0.95, reward:20, role:"氷耐性", tip:"❄️が効きにくい。📡や💣が有効。", leakHint:"氷結に頼りすぎた可能性があります。", slowResist:0.12, weak:{sniper:1.35, mortar:1.15}, resist:{ice:0.35}},
+  buffalo: {name:"すいぎゅう",emoji:"🐃", hp:430, sp:1.30, reward:22, role:"突進", tip:"速くて固い。📡❄️🔨が有効。", leakHint:"固くて速い敵への単体火力が足りませんでした。", weak:{sniper:1.35, ice:1.05, breaker:1.30}, resist:{rapid:0.60, mortar:0.60}},
+  rhino:   {name:"サイ",   emoji:"🦏", hp:560, sp:0.72, reward:26, role:"装甲", tip:"装甲がある。🔨で防御を崩そう。📡も補助になる。", leakHint:"装甲持ちへの対策が足りませんでした。", armor:true, slowResist:0.20, weak:{breaker:1.60, dot:1.30}, resist:{rapid:0.45, sniper:0.85, ice:0.20}},
+  gorilla: {name:"ゴリラ", emoji:"🦍", hp:720, sp:0.62, reward:32, role:"回復", tip:"回復する。🔥か🔮付き火力で上回る。", leakHint:"回復を上回る火力が足りませんでした。", regen:24, slowResist:0.25, weak:{dot:1.45, breaker:1.20}, resist:{rapid:0.55, ice:0.25}},
+  elephant:{name:"ぞう",   emoji:"🐘", hp:9000,sp:0.48, reward:140,role:"ボス", tip:"ボス。HPが高い。📡🔨🔮が重要。", leakHint:"ボスへの集中火力が足りませんでした。", boss:true, armor:true, slowResist:0.35, weak:{sniper:1.25, breaker:1.25, pierce:1.10}, resist:{rapid:0.55, mortar:0.65, ice:0.35}},
+  dragon:  {name:"ドラゴン",emoji:"🐉", hp:100000,sp:0.45,reward:0,  role:"最終ボス", tip:"最終ボス。HP100000。全防衛線で止める。", leakHint:"🐉を止め切れませんでした。", boss:true, dragon:true, armor:true, regen:42, slowResist:0.30, weak:{sniper:1.20, breaker:1.25, pierce:1.10}, resist:{rapid:0.45, mortar:0.55, ice:0.25}}
+};
+
+const TOWERS = {
+  rapid:   {name:"連射", emoji:"🏹", cost:80,  upgrade:120, unlock:1,  role:"小型に強い", detail:"🐁🐇🐈に強い。🦏🐘🐉には弱い。", range:2.20, interval:0.45, dmg:12, type:"phys", targets:["first","fast","weak"], defaultTarget:"first"},
+  mortar:  {name:"榴弾", emoji:"💣", cost:130, upgrade:190, unlock:1,  role:"群れに強い", detail:"🐕🐈など群れに強い。🐃🦏🐘🐉には弱い。最低射程がある。赤いマスは撃てない。", range:2.60, minRange:0.90, interval:1.35, dmg:45, type:"phys", splash:1.10, targets:["dense","first","split"], defaultTarget:"dense"},
+  ice:     {name:"氷結", emoji:"❄️", cost:100, upgrade:150, unlock:1,  role:"速い敵を遅くする", detail:"🐇🐅🐃を遅くする。🐊🦏🦍🐘🐉には効きにくい。", range:2.25, interval:0.55, dmg:3, type:"phys", slow:0.55, slowDur:1.55, targets:["fast","first","buffalo"], defaultTarget:"fast"},
+  sniper:  {name:"狙撃", emoji:"📡", cost:160, upgrade:240, unlock:6,  role:"大物に強い", detail:"🐊🐃🐘🐉に強い。🐕🐈など群れには弱い。", range:3.65, interval:1.85, dmg:150, type:"phys", targets:["strong","boss","first"], defaultTarget:"strong"},
+  breaker: {name:"装甲破砕",emoji:"🔨",cost:140, upgrade:210, unlock:7,  role:"装甲に強い", detail:"🦏🐃🐘🐉の防御を崩す。効果は重複しない。🐁🐇🐕には弱い。", range:2.35, interval:1.05, dmg:65, type:"break", debuff:4.0, targets:["armor","strong","boss"], defaultTarget:"armor"},
+  dot:     {name:"継続", emoji:"🔥", cost:150, upgrade:220, unlock:11, role:"回復に強い", detail:"燃焼で数秒間じわじわ削る。燃焼は重複しない。🦍🦏に有効。", range:2.30, interval:1.00, dmg:16, type:"true", burnDps:18, burnDur:4.2, targets:["highhp","regen","armor"], defaultTarget:"regen"},
+  pierce:  {name:"貫通", emoji:"⚡", cost:190, upgrade:290, unlock:15, role:"直線に強い", detail:"長い直線に並んだ敵をまとめて削る。曲がり角や🐘🐉単体には弱い。貫くほど威力が下がる。", range:3.85, interval:1.00, dmg:60, type:"phys", pierce:true, targets:["first","line"], defaultTarget:"line"},
+  support: {name:"支援", emoji:"🔮", cost:180, upgrade:270, unlock:18, role:"周囲を強化", detail:"上下左右の近い武器を強くする。単体では攻撃しない。支援効果は重複しない。", range:1.05, interval:0, dmg:0, type:"buff", buffDmg:0.16, buffRate:0.12, targets:[], defaultTarget:null}
+};
+const TOWER_ORDER = ["rapid","mortar","ice","sniper","breaker","dot","pierce","support"];
+
+const FIRST_APPEAR_TIP = {
+  3:"🐇登場。速いので❄️か🏹を用意。",
+  5:"🐕登場。群れには💣が有効。",
+  6:"🐃登場。固くて速い。📡や❄️が有効。",
+  7:"🦏登場。装甲がある。🔨で防御を崩そう。📡も補助になる。",
+  10:"🐘登場。ボス前は火力を集中。",
+  11:"🐈登場。倒すと🐈が増える。範囲処理が必要。",
+  12:"🐊登場。❄️が効きにくい。📡や💣で削る。",
+  13:"🐅登場。進むほど速くなる。早めに止める。",
+  16:"🦍登場。回復する。🔥で上回る。",
+  30:"🐉登場。HP100000の最終ボス。上部・中盤・下部の全火力を集中。"
+};
+
+const WAVES = [
+  {m:{mouse:6}},
+  {m:{mouse:8}},
+  {m:{mouse:6,rabbit:3}},
+  {m:{rabbit:5,mouse:5}},
+  {m:{dog:8,mouse:4}},
+  {m:{dog:10,buffalo:1}},
+  {m:{mouse:8,buffalo:2,rhino:1}},
+  {m:{rabbit:6,rhino:2,dog:6}},
+  {m:{buffalo:3,rhino:2,mouse:6}},
+  {m:{elephant:1,mouse:8}},
+  {m:{cat:6,dog:8}},
+  {m:{croc:4,rabbit:6,cat:4}},
+  {m:{tiger:4,buffalo:3,rhino:2}},
+  {m:{cat:8,croc:4,dog:8}},
+  {m:{tiger:5,rhino:3,rabbit:6}},
+  {m:{gorilla:2,rhino:3,cat:6}},
+  {m:{gorilla:3,croc:4,tiger:4}},
+  {m:{gorilla:3,rhino:4,cat:6,dog:8}},
+  {m:{buffalo:4,tiger:5,croc:4}},
+  {m:{elephant:1,rhino:3,cat:6}},
+  {m:{gorilla:3,rhino:4,tiger:5}},
+  {m:{dog:12,cat:8,rabbit:8}},
+  {m:{buffalo:5,tiger:6,croc:5}},
+  {m:{gorilla:4,rhino:5,cat:8}},
+  {m:{tiger:6,rabbit:10,buffalo:4}},
+  {m:{gorilla:4,croc:6,rhino:5,cat:8}},
+  {m:{buffalo:6,tiger:7,dog:12}},
+  {m:{gorilla:5,rhino:6,croc:6}},
+  {m:{mouse:10,rabbit:10,dog:10,cat:8,tiger:6,buffalo:4}},
+  {m:{dragon:1,gorilla:3,rhino:4,tiger:5}}
+];
+
+const WAVE_BONUS_OVERRIDE = {
+  5: 100,
+  10: 150,
+  15: 200,
+  20: 250,
+  25: 300,
+  27: 350,
+  29: 400
+};
+function baseWaveBonus(w){
+  return w <= 10 ? 4 + w : w <= 20 ? 10 + Math.floor((w - 10) * 0.5) : 12;
+}
+function waveBonus(w){
+  if(Object.prototype.hasOwnProperty.call(WAVE_BONUS_OVERRIDE, w)) return WAVE_BONUS_OVERRIDE[w];
+  const mult = w <= 10 ? 1.10 : w <= 20 ? 1.15 : 1.20;
+  return Math.max(1, Math.round(baseWaveBonus(w) * mult));
+}
+function rewardFactor(waveNum){
+  if(waveNum <= 10) return 0.90;
+  if(waveNum <= 20) return 0.80;
+  return 0.70;
+}
+function enemyHpScale(waveNum){
+  if(waveNum <= 5) return 1.10;
+  if(waveNum <= 10) return 1.20;
+  if(waveNum <= 15) return 1.35;
+  if(waveNum <= 20) return 1.55;
+  if(waveNum <= 24) return 1.85;
+  if(waveNum <= 29) return 2.20;
+  return 2.50;
+}
+function waveCountScale(waveNum){
+  if(waveNum <= 5) return 1.10;
+  if(waveNum <= 10) return 1.15;
+  if(waveNum <= 20) return 1.25;
+  if(waveNum <= 29) return 1.35;
+  return 1.55;
+}
+function scaledWaveCount(type, baseCount, waveNum){
+  if(type === "elephant" || type === "dragon") return baseCount;
+  const scale = waveCountScale(waveNum);
+  let n = baseCount;
+  if(waveNum >= 21) n = Math.ceil(baseCount * scale);
+  else if(waveNum >= 11 && baseCount >= 3) n = Math.ceil(baseCount * scale);
+  else if(baseCount >= 5) n = Math.ceil(baseCount * scale);
+  else n = Math.max(baseCount, Math.round(baseCount * scale));
+  n = Math.max(baseCount, n);
+  if(DOUBLE_SPAWN_TYPES.has(type)) n *= 2;
+  return n;
+}
+const PIERCE_DECAY = [1.00, 0.85, 0.70, 0.55];
+
+
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+const stageWrap = document.getElementById("stageWrap");
+let TILE = 32;
+let BOARD_W = COLS * TILE;
+let BOARD_H = ROWS * TILE;
+
+let game = null;
+let lastFrame = 0;
+let resultPayload = null;
+let historyLocked = false;
+
+const emojiCache = new Map();
+function emojiCanvas(ch, size){
+  const key = ch + "@" + size;
+  if(emojiCache.has(key)) return emojiCache.get(key);
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const pad = Math.ceil(size * 0.22);
+  const c = document.createElement("canvas");
+  c.width = Math.ceil((size + pad * 2) * dpr);
+  c.height = Math.ceil((size + pad * 2) * dpr);
+  c.style.width = (size + pad * 2) + "px";
+  c.style.height = (size + pad * 2) + "px";
+  const g = c.getContext("2d");
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.font = `${size}px -apple-system, BlinkMacSystemFont, sans-serif`;
+  g.fillText(ch, size/2 + pad, size/2 + pad + size*0.03);
+  emojiCache.set(key, c);
+  return c;
+}
+function drawEmoji(g, ch, x, y, size){
+  const c = emojiCanvas(ch, Math.max(8, Math.round(size)));
+  const w = parseFloat(c.style.width);
+  const h = parseFloat(c.style.height);
+  g.drawImage(c, Math.round(x - w/2), Math.round(y - h/2), w, h);
+}
+function cellCenter(col,row){ return {x:col*TILE + TILE/2, y:row*TILE + TILE/2}; }
+function towerCenter(t){ return cellCenter(t.col, t.row); }
+function pathPos(dist){
+  if(dist <= 0) return cellCenter(PATH[0][0], PATH[0][1]);
+  if(dist >= PATH_LEN) return cellCenter(PATH[PATH.length-1][0], PATH[PATH.length-1][1]);
+  const i = Math.floor(dist);
+  const f = dist - i;
+  const a = cellCenter(PATH[i][0], PATH[i][1]);
+  const b = cellCenter(PATH[i+1][0], PATH[i+1][1]);
+  return {x:a.x + (b.x-a.x)*f, y:a.y + (b.y-a.y)*f};
+}
+function distSq(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return dx*dx + dy*dy; }
+function fmt(n){ return Math.round(n).toLocaleString("ja-JP"); }
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  setTimeout(resizeCanvas, 30);
+}
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._timer);
+  el._timer = setTimeout(()=>el.classList.remove("show"), 1500);
+}
+
+function newGame(playerName){
+  return {
+    playerName: playerName || "名無しの守り手",
+    money: START_MONEY,
+    waveIndex: 0,           // 0-based next/current wave
+    phase: "prep",          // prep / wave / between / over
+    nextTimer: 10,
+    spawnTimer: 0,
+    queue: [],
+    enemies: [],
+    towers: [],
+    shots: [],
+    floaters: [],
+    selectedCell: null,
+    selectedTowerId: null,
+    selectedEnemyId: null,
+    pendingBuild: null,      // {type,col,row}: 1回目タップで射程確認、同じマス2回目で設置
+    paused: false,
+    speed: 1,
+    gameTime: 0,
+    kills: 0,
+    cleared: false,
+    over: false,
+    leakEnemy: null,
+    lastDanger: false,
+    nextTowerId: 1,
+    currentAdvice: "",
+    rankResult: null
+  };
+}
+
+function resizeCanvas(){
+  if(!document.getElementById("gameScreen").classList.contains("active")) return;
+  const sheetEl = document.getElementById("sheet");
+  // 下部メニュー表示中は盤面サイズを再計算しない。
+  // iPhone Safari の表示領域変化で盤面が潰れるのを防ぐ。
+  if(sheetEl && !sheetEl.classList.contains("closed") && BOARD_W > 0 && BOARD_H > 0) return;
+  const rect = stageWrap.getBoundingClientRect();
+  const maxW = Math.max(220, rect.width - 10);
+  const maxH = Math.max(260, rect.height - 10);
+  TILE = Math.floor(Math.min(maxW / COLS, maxH / ROWS));
+  TILE = Math.max(18, TILE);
+  BOARD_W = TILE * COLS;
+  BOARD_H = TILE * ROWS;
+  const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  canvas.style.width = BOARD_W + "px";
+  canvas.style.height = BOARD_H + "px";
+  canvas.width = Math.round(BOARD_W * dpr);
+  canvas.height = Math.round(BOARD_H * dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  render();
+}
+window.addEventListener("resize", resizeCanvas);
+window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 200));
+["gesturestart","gesturechange","gestureend"].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), {passive:false}));
+
+// iPhone Safari / HTMLビューアでの連打ズーム対策。
+// 短すぎる2回目のタップは捨て、ダブルタップズームと連打暴発を抑える。
+let lastTouchEndAt = 0;
+document.addEventListener("touchend", (e) => {
+  // 下部メニュー・武器動物モーダル内はスクロールとボタン操作を優先する。
+  // ここで止めると、武器一覧や説明モーダルが操作しづらくなる。
+  if(e.target.closest && (e.target.closest(".sheet") || e.target.closest(".guideModal"))){
+    lastTouchEndAt = Date.now();
+    return;
+  }
+  const now = Date.now();
+  if(now - lastTouchEndAt < 360){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  lastTouchEndAt = now;
+}, {passive:false, capture:true});
+document.addEventListener("dblclick", (e) => { e.preventDefault(); e.stopPropagation(); }, {passive:false, capture:true});
+document.addEventListener("click", (e) => { if(e.detail && e.detail > 1){ e.preventDefault(); e.stopPropagation(); } }, {passive:false, capture:true});
+document.addEventListener("touchstart", (e) => { if(e.touches && e.touches.length > 1) e.preventDefault(); }, {passive:false, capture:true});
+
+function isPath(col,row){ return PATH_KEYS.has(`${col},${row}`); }
+function towerAt(col,row){ return game ? game.towers.find(t => t.col===col && t.row===row) : null; }
+function canPlaceAt(col,row){
+  if(col<0 || col>=COLS || row<0 || row>=ROWS) return false;
+  if(isPath(col,row)) return false;
+  if(towerAt(col,row)) return false;
+  return true;
+}
+function enemyTargetable(e){ return !e.dead && e.dist >= IMMUNE_DIST && e.dist < PATH_LEN; }
+
+function waveNumber(){ return Math.min(30, game.waveIndex + 1); }
+function isUnlocked(towerId){ return waveNumber() >= TOWERS[towerId].unlock; }
+function updateHud(){
+  if(!game) return;
+  document.getElementById("wavePill").textContent = `第${Math.min(30, game.waveIndex+1)}波`;
+  document.getElementById("moneyPill").textContent = `資金 ${fmt(game.money)}`;
+  const st = document.getElementById("statusPill");
+  st.classList.remove("danger");
+  if(game.paused) st.textContent = "一時停止";
+  else if(hasDangerEnemy()){ st.textContent = "突破されそう！"; st.classList.add("danger"); }
+  else if(game.phase === "prep") st.textContent = `初期配置 ${Math.ceil(game.nextTimer)}秒`;
+  else if(game.phase === "between") st.textContent = `次まで ${Math.ceil(game.nextTimer)}秒`;
+  else if(game.phase === "wave") st.textContent = `進行中 ×${game.speed}`;
+  else st.textContent = "終了";
+}
+function previewWaveText(wIndex){
+  const w = WAVES[wIndex];
+  if(!w) return "";
+  const parts = [];
+  for(const [type,n] of Object.entries(w.m)){
+    const e = ENEMIES[type];
+    parts.push(`${e.emoji}×${scaledWaveCount(type, n, wIndex + 1)}`);
+  }
+  return `次：${parts.join(" ")}`;
+}
+function previewWeakText(wIndex){
+  const w = WAVES[wIndex];
+  if(!w) return "";
+  const icons = new Set();
+  for(const type of Object.keys(w.m)){
+    const e = ENEMIES[type];
+    for(const towerId of Object.keys(e.weak || {})) icons.add(TOWERS[towerId]?.emoji || "");
+  }
+  const arr = [...icons].filter(Boolean).slice(0,6);
+  return arr.length ? `弱点：${arr.join(" ")}` : "";
+}
+function updateNotice(){
+  if(!game) return;
+  const next = document.getElementById("nextInfo");
+  const advice = document.getElementById("adviceInfo");
+  if(game.phase === "wave"){
+    next.innerHTML = `<b>第${game.waveIndex+1}波</b> 進行中　残り ${game.enemies.filter(e=>!e.dead).length + game.queue.length}体`;
+  } else if(game.phase === "over"){
+    next.textContent = "結果画面へ移動します。";
+  } else {
+    next.innerHTML = `<b>${previewWaveText(game.waveIndex)}</b>　${previewWeakText(game.waveIndex)}`;
+  }
+  advice.textContent = FIRST_APPEAR_TIP[game.waveIndex+1] || game.currentAdvice || "";
+}
+function refreshUi(){ updateHud(); updateNotice(); refreshOpenSheet(); }
+
+function normalizePlayerName(value){
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  return text ? text.slice(0,16) : "名無しの守り手";
+}
+function loadSavedPlayerName(){
+  try { return localStorage.getItem(PLAYER_NAME_KEY) || ""; } catch(e) { return ""; }
+}
+function savePlayerName(name){
+  const finalName = normalizePlayerName(name);
+  try { localStorage.setItem(PLAYER_NAME_KEY, finalName); } catch(e) {}
+  return finalName;
+}
+function openNameInput(){
+  const input = document.getElementById("nameInput");
+  if(input) input.value = loadSavedPlayerName();
+  showScreen("nameScreen");
+  setTimeout(() => { try { input && input.focus(); } catch(e) {} }, 50);
+}
+
+function startGame(){
+  const rawName = document.getElementById("nameInput").value;
+  const name = savePlayerName(rawName);
+  game = newGame(name);
+  resultPayload = null;
+  showScreen("gameScreen");
+  lockHistory();
+  closeSheet();
+  updateNotice();
+  updateHud();
+  countdown(() => {
+    game.phase = "prep";
+    game.nextTimer = 10;
+    refreshUi();
+  });
+}
+
+function countdown(done){
+  const el = document.getElementById("countOverlay");
+  let n = 3;
+  el.textContent = n;
+  el.classList.add("show");
+  const tick = () => {
+    n--;
+    if(n <= 0){
+      el.textContent = "開始";
+      setTimeout(()=>{ el.classList.remove("show"); done(); }, 450);
+    } else {
+      el.textContent = n;
+      setTimeout(tick, 650);
+    }
+  };
+  setTimeout(tick, 650);
+}
+
+function startWave(){
+  if(!game || game.over) return;
+  const waveNum = game.waveIndex + 1;
+  const w = WAVES[game.waveIndex];
+  game.phase = "wave";
+  game.spawnTimer = 0;
+  game.queue = [];
+  game.lastDanger = false;
+  const groups = Object.entries(w.m).map(([type,n]) => ({type, n:scaledWaveCount(type, n, waveNum)}));
+  // ボスは少し先に出しすぎると潰れやすいので、他の敵と交互に並べる。
+  const remaining = groups.map(g => ({...g}));
+  let t = 0.35;
+  let any = true;
+  while(any){
+    any = false;
+    for(const g of remaining){
+      if(g.n > 0){
+        game.queue.push({type:g.type, at:t, wave:waveNum});
+        g.n--;
+        t += SPAWN_GAP;
+        any = true;
+      }
+    }
+  }
+  showFloatText(BOARD_W/2, TILE*.8, `第${waveNum}波`, "#ffe19a", 1.2, 24);
+  // ウェーブ開始時に下部メニューを閉じない。
+  // 武器選択中・設置確認中のプレイヤー操作をリセットしないため。
+  refreshUi();
+}
+
+function createEnemy(type, waveNum){
+  const base = ENEMIES[type];
+  const hp = (type === "elephant" || type === "dragon") ? BOSS_HP[waveNum] : Math.round(base.hp * enemyHpScale(waveNum));
+  const p = pathPos(0);
+  return {
+    id: cryptoRandomId(), type, name:base.name, emoji:base.emoji,
+    maxHp:hp, hp:hp, baseSp:base.sp, dist:0, x:p.x, y:p.y,
+    reward:Math.max(0, Math.round(base.reward * rewardFactor(waveNum))), role:base.role, leakHint:base.leakHint,
+    armor:!!base.armor, boss:!!base.boss, dragon:!!base.dragon,
+    regen:base.regen || 0, split:base.split || 0, accel:!!base.accel,
+    slowResist: base.slowResist == null ? 1 : base.slowResist,
+    slowTimer:0, slowFactor:1, accelBonus:0,
+    armorDebuff:0, burn:null, dead:false, reached:false
+  };
+}
+function cryptoRandomId(){
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function enemyStep(e, dt){
+  if(e.dead) return;
+  const base = ENEMIES[e.type];
+  // 入口保護中は、燃焼や回復などの戦闘処理も止める。攻撃対象外を徹底する。
+  if(enemyTargetable(e)){
+    if(e.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.regen * dt);
+    if(e.burn && e.burn.time > 0){
+      const dmg = e.burn.dps * dt;
+      applyDamage(e, dmg, "dot", true, true);
+      e.burn.time -= dt;
+      if(e.burn.time <= 0) e.burn = null;
+    }
+  }
+  if(e.armorDebuff > 0) e.armorDebuff -= dt;
+  if(e.slowTimer > 0){
+    e.slowTimer -= dt;
+    if(e.slowTimer <= 0){ e.slowTimer = 0; e.slowFactor = 1; }
+  }
+  let sp = e.baseSp;
+  if(e.accel){
+    e.accelBonus = Math.min(0.95, e.accelBonus + 0.045 * dt * e.baseSp);
+    sp += e.accelBonus;
+  }
+  if(e.hp < e.maxHp * 0.45 && e.boss) sp *= e.dragon ? 1.45 : 1.25;
+  if(e.slowTimer > 0) sp *= e.slowFactor;
+  e.dist += sp * dt;
+  const p = pathPos(e.dist);
+  e.x = p.x; e.y = p.y;
+  if(e.dist >= PATH_LEN && !e.reached){
+    e.reached = true;
+    game.leakEnemy = e;
+    endGame(false);
+  }
+}
+
+function relationMultiplier(enemyType, towerId){
+  const base = ENEMIES[enemyType];
+  if(base.weak && base.weak[towerId] != null) return base.weak[towerId];
+  if(base.resist && base.resist[towerId] != null) return base.resist[towerId];
+  return 1;
+}
+function computeDamage(enemy, rawDmg, towerId, damageType){
+  let d = rawDmg * relationMultiplier(enemy.type, towerId);
+  if(enemy.armor && enemy.armorDebuff <= 0 && damageType === "phys") d *= 0.50;
+  if(enemy.armor && enemy.armorDebuff > 0 && damageType === "phys") d *= 0.85;
+  if(d < 0) d = 0;
+  return d;
+}
+function hitLabel(enemy, rawDmg, finalDmg, towerId, damageType){
+  if(towerId === "breaker" && enemy.armor) return "破砕";
+  if(rawDmg <= 0) return "";
+  const ratio = finalDmg / rawDmg;
+  if(ratio >= 1.24) return "弱点";
+  if(ratio <= 0.25) return "無効";
+  if(ratio <= 0.72) return "耐性";
+  return "";
+}
+function applyDamage(enemy, rawDmg, towerId, silent=false, alreadyFinal=false){
+  if(enemy.dead) return 0;
+  if(!enemyTargetable(enemy) && !alreadyFinal) return 0;
+  const def = TOWERS[towerId] || {type:"true"};
+  const finalDmg = alreadyFinal ? rawDmg : computeDamage(enemy, rawDmg, towerId, def.type);
+  enemy.hp -= finalDmg;
+  if(!silent){
+    const label = hitLabel(enemy, rawDmg, finalDmg, towerId, def.type);
+    if(label) showFloatText(enemy.x, enemy.y - TILE*.40, label, label==="弱点"?"#ffdf7e":label==="破砕"?"#a9d6ff":"#ff8f8f", .55, 12);
+  }
+  if(enemy.hp <= 0 && !enemy.dead){
+    killEnemy(enemy);
+  }
+  return finalDmg;
+}
+function killEnemy(enemy){
+  enemy.dead = true;
+  game.kills++;
+  game.money += enemy.reward;
+  showFloatText(enemy.x, enemy.y, `+${enemy.reward}`, "#ffdf7e", .75, 13);
+  if(enemy.split > 0){
+    for(let i=0; i<enemy.split; i++){
+      const k = createEnemy("kitten", game.waveIndex+1);
+      k.dist = Math.max(IMMUNE_DIST, enemy.dist - 0.25*i);
+      const p = pathPos(k.dist); k.x = p.x; k.y = p.y;
+      game.enemies.push(k);
+    }
+  }
+  updateHud();
+  refreshOpenSheet();
+}
+function applySlow(enemy, factor, dur){
+  if(!enemyTargetable(enemy)) return;
+  const eff = 1 - (1 - factor) * enemy.slowResist;
+  // 繰り返し氷結の効きすぎを少し抑える。
+  const softened = enemy.slowTimer > 0 ? Math.max(eff, enemy.slowFactor + 0.06) : eff;
+  if(softened < enemy.slowFactor || enemy.slowTimer <= 0) enemy.slowFactor = softened;
+  enemy.slowTimer = Math.max(enemy.slowTimer, dur);
+}
+function applyBurn(enemy, dps, dur){
+  if(!enemyTargetable(enemy)) return;
+  if(!enemy.burn || enemy.burn.dps < dps){
+    enemy.burn = {dps, time:dur};
+  } else {
+    enemy.burn.time = Math.max(enemy.burn.time, dur);
+  }
+}
+
+function placeTower(type, col, row){
+  const def = TOWERS[type];
+  if(!def || !canPlaceAt(col,row)) return false;
+  if(game.paused){ toast("一時停止中は設置できません"); return false; }
+  if(!isUnlocked(type)){ toast(`${def.name}は第${def.unlock}波から解放`); return false; }
+  if(game.money < def.cost){ toast("資金が足りません"); return false; }
+  game.money -= def.cost;
+  const t = {
+    id: game.nextTowerId++, type, col, row, level:1,
+    invested:def.cost, createdAt:game.gameTime, attacked:false,
+    target:def.defaultTarget, cool:0
+  };
+  game.towers.push(t);
+  game.selectedCell = null;
+  game.selectedEnemyId = null;
+  game.pendingBuild = null;
+  game.selectedTowerId = t.id;
+  updateHud();
+  openTowerMenu(t.id);
+  return true;
+}
+function upgradeCost(t){
+  return TOWERS[t.type].upgrade || Math.round(TOWERS[t.type].cost * 1.5);
+}
+function isSupportedBy(s, t){
+  const dc = Math.abs(s.col - t.col);
+  const dr = Math.abs(s.row - t.row);
+  // 支援は上下左右の隣接マスだけ。斜めや広範囲キルゾーン全体は強化しない。
+  return (dc + dr) === 1;
+}
+function towerStats(t, levelOverride=null, includeSupport=true){
+  const def = TOWERS[t.type];
+  const lv = levelOverride == null ? t.level : levelOverride;
+  let dmgMul = 1, rateMul = 1, rangeAdd = 0, splashMul = 1;
+  let burnDpsMul = 1, burnDurAdd = 0, slowFactorMul = 1, slowDurAdd = 0, debuffAdd = 0;
+  if(lv >= 2){
+    if(t.type === "rapid"){ dmgMul = 1.15; rateMul = 1.25; rangeAdd = 0.10; }
+    else if(t.type === "sniper"){ dmgMul = 1.45; rangeAdd = 0.30; }
+    else if(t.type === "mortar"){ dmgMul = 1.25; splashMul = 1.15; rangeAdd = 0.10; }
+    else if(t.type === "dot"){ dmgMul = 1.10; burnDpsMul = 1.25; burnDurAdd = 1.50; rangeAdd = 0.10; }
+    else if(t.type === "ice"){ slowFactorMul = 0.88; slowDurAdd = 0.45; rangeAdd = 0.10; }
+    else if(t.type === "pierce"){ dmgMul = 1.30; rangeAdd = 0.20; }
+    else if(t.type === "breaker"){ dmgMul = 1.15; debuffAdd = 1.40; rangeAdd = 0.10; }
+  }
+  let bestBuffDmg = 0, bestBuffRate = 0;
+  if(includeSupport && t.type !== "support"){
+    for(const s of game.towers){
+      if(s.type !== "support" || s.id === t.id) continue;
+      if(isSupportedBy(s, t)){
+        const st = supportStats(s);
+        bestBuffDmg = Math.max(bestBuffDmg, st.buffDmg);
+        bestBuffRate = Math.max(bestBuffRate, st.buffRate);
+      }
+    }
+  }
+  dmgMul *= (1 + bestBuffDmg);
+  rateMul *= (1 + bestBuffRate);
+  return {
+    dmg:(def.dmg || 0) * dmgMul,
+    range:(def.range + rangeAdd) * TILE,
+    minRange:(def.minRange || 0) * TILE,
+    interval:def.interval ? def.interval / rateMul : 0,
+    splash:(def.splash || 0) * splashMul,
+    slow:def.slow ? Math.max(0.25, def.slow * slowFactorMul) : 0,
+    burnDps:(def.burnDps || 0) * burnDpsMul * dmgMul,
+    burnDur:(def.burnDur || 0) + burnDurAdd,
+    debuff:(def.debuff || 0) + debuffAdd,
+    slowDur:(def.slowDur || 0) + slowDurAdd
+  };
+}
+function supportStats(t, levelOverride=null){
+  const def = TOWERS.support;
+  const lv = levelOverride == null ? t.level : levelOverride;
+  return {
+    // 表示用の半径。実際の支援判定は isSupportedBy で上下左右のみ。
+    range:def.range * TILE,
+    buffDmg:def.buffDmg + (lv >= 2 ? 0.05 : 0),
+    buffRate:def.buffRate + (lv >= 2 ? 0.05 : 0)
+  };
+}
+
+// 設置前プレビュー用。まだ盤面上のタワーではないため、支援込みにはしない。
+// 設置後・強化後の比較は towerStats(t, level, true) で、現在と同じ支援条件を反映する。
+function previewTowerStats(type){
+  const def = TOWERS[type];
+  if(!def) return {dmg:0, range:0, minRange:0, interval:0, splash:0, slow:0, burnDps:0, burnDur:0, debuff:0, slowDur:0};
+  if(type === "support"){
+    return {
+      range:def.range * TILE,
+      buffDmg:def.buffDmg,
+      buffRate:def.buffRate
+    };
+  }
+  return {
+    dmg:def.dmg || 0,
+    range:(def.range || 0) * TILE,
+    minRange:(def.minRange || 0) * TILE,
+    interval:def.interval || 0,
+    splash:def.splash || 0,
+    slow:def.slow || 0,
+    burnDps:def.burnDps || 0,
+    burnDur:def.burnDur || 0,
+    debuff:def.debuff || 0,
+    slowDur:def.slowDur || 0
+  };
+}
+
+function isTowerSupported(t){
+  if(!t || t.type === "support") return false;
+  return game.towers.some(s => s.type === "support" && s.id !== t.id && isSupportedBy(s, t));
+}
+
+function enemiesInRange(t, st){
+  const tc = towerCenter(t);
+  const arr = [];
+  for(const e of game.enemies){
+    if(!enemyTargetable(e)) continue;
+    const d2 = distSq(tc, e);
+    if(d2 <= st.range*st.range && d2 >= st.minRange*st.minRange) arr.push(e);
+  }
+  return arr;
+}
+function pickTarget(t, st){
+  const arr = enemiesInRange(t, st);
+  if(!arr.length) return null;
+  const target = t.target || TOWERS[t.type].defaultTarget || "first";
+  if(target === "first") arr.sort((a,b)=>b.dist-a.dist);
+  else if(target === "fast") arr.sort((a,b)=>effectiveSpeed(b)-effectiveSpeed(a));
+  else if(target === "weak") arr.sort((a,b)=>a.hp-b.hp);
+  else if(target === "strong") arr.sort((a,b)=>b.hp-a.hp);
+  else if(target === "boss") arr.sort((a,b)=>(b.boss?1:0)-(a.boss?1:0) || b.hp-a.hp);
+  else if(target === "split") arr.sort((a,b)=>(b.split?1:0)-(a.split?1:0) || b.dist-a.dist);
+  else if(target === "highhp") arr.sort((a,b)=>b.maxHp-a.maxHp || b.hp-a.hp);
+  else if(target === "regen") arr.sort((a,b)=>(ENEMIES[b.type].regen||0)-(ENEMIES[a.type].regen||0) || b.hp-a.hp);
+  else if(target === "armor") arr.sort((a,b)=>(b.armor?1:0)-(a.armor?1:0) || b.hp-a.hp);
+  else if(target === "buffalo") arr.sort((a,b)=>(b.type==="buffalo"?1:0)-(a.type==="buffalo"?1:0) || b.dist-a.dist);
+  else if(target === "dense") arr.sort((a,b)=>densityScore(b)-densityScore(a) || b.dist-a.dist);
+  else if(target === "line") arr.sort((a,b)=>lineScore(t,b,st)-lineScore(t,a,st) || b.dist-a.dist);
+  else arr.sort((a,b)=>b.dist-a.dist);
+  return arr[0];
+}
+function effectiveSpeed(e){
+  let sp = e.baseSp + (e.accelBonus || 0);
+  if(e.slowTimer > 0) sp *= e.slowFactor;
+  return sp;
+}
+function densityScore(e){
+  let n = 0;
+  const r = TILE * 1.2;
+  for(const other of game.enemies){
+    if(!enemyTargetable(other)) continue;
+    if(distSq(e, other) <= r*r) n++;
+  }
+  return n;
+}
+function lineScore(t, target, st){
+  const tc = towerCenter(t);
+  const ang = Math.atan2(target.y-tc.y, target.x-tc.x);
+  const ux = Math.cos(ang), uy = Math.sin(ang);
+  let n = 0;
+  for(const e of game.enemies){
+    if(!enemyTargetable(e)) continue;
+    const rx=e.x-tc.x, ry=e.y-tc.y;
+    const proj = rx*ux + ry*uy;
+    if(proj < 0 || proj > st.range) continue;
+    const perp = Math.abs(rx*uy - ry*ux);
+    if(perp <= TILE*0.46) n++;
+  }
+  return n;
+}
+function towerStep(t, dt){
+  const def = TOWERS[t.type];
+  if(t.type === "support") return;
+  t.cool -= dt;
+  if(t.cool > 0) return;
+  const st = towerStats(t);
+  const target = pickTarget(t, st);
+  if(!target) return;
+  t.cool = st.interval;
+  t.attacked = true;
+  const tc = towerCenter(t);
+
+  if(def.slow) applySlow(target, st.slow || def.slow, st.slowDur);
+  if(t.type === "breaker" && target.armor){
+    target.armorDebuff = Math.max(target.armorDebuff, st.debuff);
+  }
+  if(t.type === "dot"){
+    applyDamage(target, st.dmg, t.type);
+    applyBurn(target, st.burnDps, st.burnDur);
+    game.shots.push({kind:"line", x1:tc.x,y1:tc.y,x2:target.x,y2:target.y,life:.10,color:"#ff8a42"});
+    return;
+  }
+  if(def.pierce){
+    const ang = Math.atan2(target.y-tc.y, target.x-tc.x);
+    const ux=Math.cos(ang), uy=Math.sin(ang);
+    const hits = [];
+    for(const e of game.enemies){
+      if(!enemyTargetable(e)) continue;
+      const rx=e.x-tc.x, ry=e.y-tc.y;
+      const proj = rx*ux + ry*uy;
+      if(proj < 0 || proj > st.range) continue;
+      const perp = Math.abs(rx*uy - ry*ux);
+      if(perp <= TILE*0.46) hits.push({e, proj});
+    }
+    hits.sort((a,b)=>a.proj-b.proj);
+    hits.forEach((hit, idx)=>{
+      const decay = idx < PIERCE_DECAY.length ? PIERCE_DECAY[idx] : 0.45;
+      applyDamage(hit.e, st.dmg * decay, t.type);
+    });
+    game.shots.push({kind:"line", x1:tc.x,y1:tc.y,x2:tc.x+ux*st.range,y2:tc.y+uy*st.range,life:.12,color:"#9fd3ff"});
+    return;
+  }
+  if(def.splash){
+    applyDamage(target, st.dmg, t.type);
+    const r = st.splash * TILE;
+    for(const e of game.enemies){
+      if(e.id === target.id || !enemyTargetable(e)) continue; // 入口保護中の敵には爆風も当てない
+      if(distSq(e, target) <= r*r) applyDamage(e, st.dmg*0.62, t.type);
+    }
+    game.shots.push({kind:"circle", x:target.x, y:target.y, r, life:.16, color:"#f0b74a"});
+    return;
+  }
+  applyDamage(target, st.dmg, t.type);
+  game.shots.push({kind:"line", x1:tc.x,y1:tc.y,x2:target.x,y2:target.y,life:.08,color:t.type==="ice"?"#9fd3ff":"#eee7d7"});
+}
+
+function update(dt){
+  if(!game || game.over || game.paused) return;
+  game.gameTime += dt;
+  const stepDt = dt * (game.phase === "wave" ? game.speed : 1);
+
+  if(game.phase === "prep" || game.phase === "between"){
+    game.nextTimer -= dt;
+    if(game.nextTimer <= 0) startWave();
+  }
+  if(game.phase === "wave"){
+    game.spawnTimer += stepDt;
+    const activeCount = game.enemies.filter(e => !e.dead && !e.reached).length;
+    let spawnSlots = Math.max(0, MAX_ACTIVE_ENEMIES - activeCount);
+    while(game.queue.length && game.queue[0].at <= game.spawnTimer && spawnSlots > 0){
+      const item = game.queue.shift();
+      game.enemies.push(createEnemy(item.type, item.wave));
+      spawnSlots--;
+    }
+    if(game.queue.length && game.queue[0].at <= game.spawnTimer && spawnSlots <= 0){
+      // 同時敵数が上限に近いときは、次の出現を少し待たせる。
+      game.spawnTimer = game.queue[0].at;
+    }
+    for(const e of game.enemies) enemyStep(e, stepDt);
+    for(const t of game.towers) towerStep(t, stepDt);
+    game.enemies = game.enemies.filter(e => !e.dead || e.reached);
+    updateDangerState();
+    if(!game.over && game.queue.length === 0 && game.enemies.every(e => e.dead || e.reached)){
+      finishWave();
+    }
+  }
+  for(const s of game.shots) s.life -= dt * 1.4;
+  game.shots = game.shots.filter(s => s.life > 0);
+  for(const f of game.floaters){ f.life -= dt; f.y -= dt * f.rise; }
+  game.floaters = game.floaters.filter(f => f.life > 0);
+}
+function finishWave(){
+  const clearedWave = game.waveIndex + 1;
+  game.money += waveBonus(clearedWave);
+  showFloatText(BOARD_W/2, TILE*1.3, `波クリア +${waveBonus(clearedWave)}`, "#ffdf7e", 1.0, 16);
+  game.waveIndex++;
+  if(game.waveIndex >= WAVES.length){
+    endGame(true);
+    return;
+  }
+  game.phase = "between";
+  game.nextTimer = ([9,19,29].includes(game.waveIndex)) ? 8 : 3;
+  game.currentAdvice = FIRST_APPEAR_TIP[game.waveIndex+1] || "";
+  refreshUi();
+}
+function hasDangerEnemy(){
+  if(!game) return false;
+  return game.enemies.some(e => !e.dead && e.dist >= DANGER_DIST);
+}
+function updateDangerState(){
+  if(!game || game.over) return;
+  const dangerNow = hasDangerEnemy();
+  if(dangerNow && !game.lastDanger){
+    if(game.speed !== 1){
+      game.speed = 1;
+      $("btnSpeed").textContent = "1倍";
+      showFloatText(BOARD_W/2, TILE*1.9, "突破警告：1倍速へ", "#ff9a9a", 1.1, 15);
+    } else {
+      showFloatText(BOARD_W/2, TILE*1.9, "突破されそう！", "#ff9a9a", .9, 15);
+    }
+  }
+  game.lastDanger = dangerNow;
+}
+
+function getClearWave(g = game){
+  if(!g) return 0;
+  if(g.cleared) return 30;
+  return Math.max(0, Math.min(29, Math.floor(Number(g.waveIndex) || 0)));
+}
+
+function scoreGame(){
+  const clearWave = getClearWave();
+  const clearBonus = game.cleared ? 50000 : 0;
+  const moneyBonus = Math.min(5000, Math.max(0, Math.round(game.money)));
+  return clearWave * 10000 + clearBonus + Math.min(12000, game.kills * 8) + moneyBonus;
+}
+function endGame(cleared){
+  if(!game || game.over) return;
+  game.over = true;
+  game.phase = "over";
+  game.cleared = !!cleared;
+  closeSheet(false);
+  unlockHistory();
+  const score = scoreGame();
+  const leak = game.leakEnemy;
+  let message;
+  if(cleared){
+    message = "🐉を倒しました。<br>👨‍🌾は今日も畑に立っています。";
+  } else if(leak){
+    message = `${leak.emoji}が👨‍🌾に到達しました。<br>${leak.leakHint || "守り切れませんでした。"}`;
+  } else {
+    message = "守り切れませんでした。";
+  }
+  resultPayload = {
+    cleared:!!cleared,
+    score,
+    clearWave:getClearWave(),
+    kills:game.kills,
+    money:Math.max(0, Math.round(game.money)),
+    message,
+    playerName:game.playerName
+  };
+  setTimeout(showResult, 350);
+}
+
+function showResult(){
+  const r = resultPayload;
+  if(!r) return;
+  showScreen("resultScreen");
+  document.getElementById("resultTitle").textContent = r.cleared ? "結果：クリア" : "結果：敗北";
+  document.getElementById("resultMessage").innerHTML = r.message;
+  const stats = document.getElementById("resultStats");
+  stats.innerHTML = [
+    ["クリア波数", `${r.clearWave}波`],
+    ["スコア", `${fmt(r.score)}点`],
+    ["撃破", `${fmt(r.kills)}体`],
+    ["残り資金", `${fmt(r.money)}`]
+  ].map(([k,v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
+  const rs = document.getElementById("rankStatus");
+  const rankingBox = document.getElementById("rankingBox");
+  if(rankingBox) rankingBox.innerHTML = "";
+  rs.textContent = "ランキング登録中...";
+  submitScore(r)
+    .then(result => {
+      rs.textContent = result.text;
+      renderRanking(result.rows, r.playerName);
+    })
+    .catch(err => {
+      console.error(err);
+      rs.textContent = "ランキング登録に失敗しました";
+      renderRanking([], r.playerName);
+    });
+}
+
+async function supabaseRpc(functionName, payload){
+  const url = SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/rpc/" + functionName;
+  const res = await fetch(url, {
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "apikey":SUPABASE_PUBLISHABLE_KEY,
+      "authorization":"Bearer " + SUPABASE_PUBLISHABLE_KEY
+    },
+    body:JSON.stringify(payload)
+  });
+  if(!res.ok){
+    const text = await res.text().catch(()=>"");
+    throw new Error(functionName + " failed: " + res.status + " " + text.slice(0,200));
+  }
+  return await res.json().catch(()=>null);
+}
+
+async function submitScore(r){
+  if(!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY){
+    return {text:"ランキング登録は現在利用できません", rows:[]};
+  }
+  const submitRows = await supabaseRpc("submit_score", {
+    p_display_name: normalizePlayerName(r.playerName),
+    p_game_slug: GAME_SLUG,
+    p_score: Math.round(Number(r.score) || 0),
+    p_client_version: CLIENT_VERSION
+  });
+  const rankingRows = await supabaseRpc("get_best_score_ranking", {
+    p_game_slug: GAME_SLUG,
+    p_limit: 10
+  });
+  let text = "ランキング登録：登録しました";
+  if(Array.isArray(submitRows) && submitRows[0]){
+    const row = submitRows[0];
+    const bestScore = row.result_best_score != null ? fmt(row.result_best_score) : fmt(r.score);
+    const plays = row.result_play_count != null ? ` / ${row.result_play_count}回目` : "";
+    text = `ランキング登録：最高 ${bestScore}点${plays}`;
+  }
+  return {text, rows:Array.isArray(rankingRows) ? rankingRows : []};
+}
+
+function renderRanking(rows, playerName){
+  const box = document.getElementById("rankingBox");
+  if(!box) return;
+  box.innerHTML = "";
+  const title = document.createElement("div");
+  title.className = "small";
+  title.textContent = "ランキング TOP10";
+  box.appendChild(title);
+  if(!Array.isArray(rows) || rows.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "stat";
+    empty.innerHTML = `<span>ランキング</span><b>取得なし</b>`;
+    box.appendChild(empty);
+    return;
+  }
+  const normalizedPlayer = normalizePlayerName(playerName);
+  rows.forEach(r => {
+    const rankNo = r.rank_no ?? r.rank ?? "?";
+    const name = r.display_name ?? r.name ?? "?";
+    const rawScore = r.best_score ?? r.score;
+    const score = Number.isFinite(Number(rawScore)) ? fmt(Number(rawScore)) : "?";
+    const plays = r.play_count != null ? ` / ${fmt(Number(r.play_count) || 0)}回` : "";
+    const isMe = normalizedPlayer && name === normalizedPlayer;
+    const div = document.createElement("div");
+    div.className = "stat";
+    div.innerHTML = `<span>${escapeHtml(rankNo)}位 ${escapeHtml(name)}${isMe ? " ←あなた" : ""}</span><b>${score}点${plays}</b>`;
+    box.appendChild(div);
+  });
+}
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    "\"":"&quot;",
+    "'":"&#39;"
+  }[ch] || ch));
+}
+
+
+function cellInTowerRange(col, row, towerCol, towerRow, st){
+  const a = cellCenter(col, row);
+  const b = cellCenter(towerCol, towerRow);
+  const d2 = (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
+  return d2 <= st.range*st.range;
+}
+function cellInTowerDeadZone(col, row, towerCol, towerRow, st){
+  if(!st.minRange || st.minRange <= 0) return false;
+  const a = cellCenter(col, row);
+  const b = cellCenter(towerCol, towerRow);
+  const d2 = (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
+  return d2 < st.minRange*st.minRange;
+}
+function drawRangeCells(g, type, col, row, st, mode="tower"){
+  if(type === "support"){
+    const cells = [[col,row],[col+1,row],[col-1,row],[col,row+1],[col,row-1]];
+    for(const [cc,rr] of cells){
+      if(cc<0 || cc>=COLS || rr<0 || rr>=ROWS) continue;
+      const self = cc===col && rr===row;
+      g.fillStyle = self ? "rgba(240,183,74,.12)" : "rgba(137,116,255,.18)";
+      g.fillRect(cc*TILE+3, rr*TILE+3, TILE-6, TILE-6);
+      g.strokeStyle = self ? "rgba(240,183,74,.8)" : "rgba(137,116,255,.75)";
+      g.lineWidth = 2;
+      g.strokeRect(cc*TILE+4, rr*TILE+4, TILE-8, TILE-8);
+    }
+    return;
+  }
+  for(let rr=0; rr<ROWS; rr++){
+    for(let cc=0; cc<COLS; cc++){
+      if(!cellInTowerRange(cc, rr, col, row, st)) continue;
+      const dead = cellInTowerDeadZone(cc, rr, col, row, st);
+      if(dead){
+        g.fillStyle = "rgba(255,80,80,.18)";
+        g.strokeStyle = "rgba(255,100,100,.72)";
+      } else {
+        g.fillStyle = mode === "pending" ? "rgba(240,183,74,.14)" : "rgba(240,183,74,.09)";
+        g.strokeStyle = mode === "pending" ? "rgba(240,183,74,.72)" : "rgba(240,183,74,.54)";
+      }
+      g.fillRect(cc*TILE+3, rr*TILE+3, TILE-6, TILE-6);
+      g.lineWidth = dead ? 1.5 : 1;
+      g.strokeRect(cc*TILE+4, rr*TILE+4, TILE-8, TILE-8);
+    }
+  }
+  if(st.minRange > 0){
+    const tc = cellCenter(col,row);
+    g.fillStyle = "#ffd4d4";
+    g.font = `bold ${Math.max(9,TILE*.22)}px sans-serif`;
+    g.textAlign = "center";
+    g.fillText("死角", tc.x, tc.y + 3);
+  }
+}
+function render(){
+  if(!game){
+    ctx.clearRect(0,0,BOARD_W,BOARD_H);
+    return;
+  }
+  const g = ctx;
+  g.clearRect(0,0,BOARD_W,BOARD_H);
+  g.fillStyle = "#0b111a";
+  g.fillRect(0,0,BOARD_W,BOARD_H);
+
+  // 配置マス
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const x=c*TILE, y=r*TILE;
+    if(isPath(c,r)) continue;
+    const placeable = canPlaceAt(c,r);
+    g.fillStyle = placeable ? "#101a26" : "#080c12";
+    g.fillRect(x+1,y+1,TILE-2,TILE-2);
+    if(!placeable){
+      g.fillStyle = "rgba(255,255,255,.045)";
+      g.fillRect(x+3,y+3,TILE-6,TILE-6);
+    }
+  }
+
+  // 道と入口保護区間
+  for(let i=0;i<PATH.length;i++){
+    const [c,r] = PATH[i];
+    g.fillStyle = i < Math.ceil(IMMUNE_DIST) ? "#243048" : "#1a2434";
+    if(i >= Math.floor(FLAG_DIST)) g.fillStyle = "#332033";
+    g.fillRect(c*TILE+1, r*TILE+1, TILE-2, TILE-2);
+  }
+
+  // グリッド
+  g.strokeStyle = "rgba(255,255,255,.05)";
+  g.lineWidth = 1;
+  for(let c=0;c<=COLS;c++){ g.beginPath(); g.moveTo(c*TILE,0); g.lineTo(c*TILE,BOARD_H); g.stroke(); }
+  for(let r=0;r<=ROWS;r++){ g.beginPath(); g.moveTo(0,r*TILE); g.lineTo(BOARD_W,r*TILE); g.stroke(); }
+
+  // 入口・警告旗・ゴール
+  const entry = cellCenter(PATH[0][0], PATH[0][1]);
+  const flag = pathPos(FLAG_DIST);
+  const farmer = pathPos(PATH_LEN);
+  drawEmoji(g, "⬇️", entry.x, entry.y, TILE*.62);
+  drawEmoji(g, "🚩", flag.x, flag.y, TILE*.66);
+  drawEmoji(g, "👨‍🌾", farmer.x, farmer.y, TILE*.78);
+
+  // 設置前プレビューの射程（既存武器・敵はこのあと上に描く）
+  if(game.pendingBuild){
+    const {type,col,row} = game.pendingBuild;
+    const st = previewTowerStats(type);
+    drawRangeCells(g, type, col, row, st, "pending");
+  }
+
+  // 選択中マス
+  if(game.selectedCell){
+    const {col,row} = game.selectedCell;
+    g.strokeStyle = "rgba(240,183,74,.95)";
+    g.lineWidth = 3;
+    g.strokeRect(col*TILE+3,row*TILE+3,TILE-6,TILE-6);
+  }
+
+  // タワー
+  for(const t of game.towers){
+    const tc = towerCenter(t);
+    if(game.selectedTowerId === t.id){
+      const st = t.type === "support" ? supportStats(t) : towerStats(t);
+      drawRangeCells(g, t.type, t.col, t.row, st, "tower");
+    }
+    drawEmoji(g, TOWERS[t.type].emoji, tc.x, tc.y, TILE*.72);
+    for(let i=0;i<t.level;i++){
+      g.fillStyle = "#f0b74a";
+      g.beginPath(); g.arc(tc.x - TILE*.25 + i*5, tc.y + TILE*.30, 2, 0, Math.PI*2); g.fill();
+    }
+  }
+
+  // 攻撃演出
+  for(const s of game.shots){
+    const a = Math.max(0, Math.min(1, s.life*8));
+    g.globalAlpha = a;
+    if(s.kind === "line"){
+      g.strokeStyle = s.color; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(s.x1,s.y1); g.lineTo(s.x2,s.y2); g.stroke();
+    } else if(s.kind === "circle"){
+      g.strokeStyle = s.color; g.lineWidth = 2;
+      g.beginPath(); g.arc(s.x,s.y,s.r,0,Math.PI*2); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+
+  // 敵
+  for(const e of game.enemies){
+    if(e.dead && !e.reached) continue;
+    const danger = e.dist >= DANGER_DIST;
+    if(danger){
+      g.fillStyle = "rgba(255,80,80,.26)";
+      g.beginPath(); g.arc(e.x,e.y,TILE*.70,0,Math.PI*2); g.fill();
+    }
+    if(e.dist < IMMUNE_DIST){
+      g.fillStyle = "rgba(150,190,255,.14)";
+      g.beginPath(); g.arc(e.x,e.y,TILE*.42,0,Math.PI*2); g.fill();
+    }
+    if(danger) g.globalAlpha = .62 + .38*Math.sin(performance.now()/80);
+    const size = e.dragon ? TILE*1.10 : e.boss ? TILE*1.0 : e.type === "kitten" ? TILE*.54 : TILE*.68;
+    drawEmoji(g, e.emoji, e.x, e.y, size);
+    g.globalAlpha = 1;
+    const bw = e.boss ? TILE*1.15 : TILE*.72;
+    const bh = Math.max(3, TILE*.08);
+    g.fillStyle = "rgba(0,0,0,.65)";
+    g.fillRect(e.x-bw/2, e.y-size*.63, bw, bh);
+    g.fillStyle = danger ? "#ff6b6b" : e.armorDebuff>0 ? "#9fd3ff" : "#69d58a";
+    g.fillRect(e.x-bw/2, e.y-size*.63, bw*Math.max(0,e.hp/e.maxHp), bh);
+    if(e.burn){ drawEmoji(g,"🔥",e.x + TILE*.26, e.y - TILE*.24, TILE*.26); }
+    if(e.armorDebuff>0){
+      g.fillStyle = "#a9d6ff";
+      g.font = `${Math.max(9,TILE*.24)}px sans-serif`;
+      g.textAlign = "center";
+      g.fillText("破", e.x - TILE*.30, e.y + TILE*.33);
+    }
+    if(danger){
+      g.fillStyle = "#ffdddd";
+      g.font = `bold ${Math.max(10,TILE*.26)}px sans-serif`;
+      g.textAlign = "center";
+      g.fillText("危険!", e.x, e.y - size*.84);
+    }
+  }
+
+  // 設置前プレビューの武器本体（敵・既存武器の進行を保ったまま、設置予定だけ強調）
+  if(game.pendingBuild){
+    const {type,col,row} = game.pendingBuild;
+    const def = TOWERS[type];
+    const cc = cellCenter(col,row);
+    g.save();
+    g.fillStyle = "rgba(240,183,74,.20)";
+    g.strokeStyle = "rgba(255,223,126,.96)";
+    g.lineWidth = 3;
+    g.fillRect(col*TILE+4, row*TILE+4, TILE-8, TILE-8);
+    g.strokeRect(col*TILE+5, row*TILE+5, TILE-10, TILE-10);
+    drawEmoji(g, def.emoji, cc.x, cc.y, TILE*.78);
+    g.font = `900 ${Math.max(10,TILE*.24)}px sans-serif`;
+    g.textAlign = "center";
+    g.strokeStyle = "rgba(0,0,0,.85)";
+    g.fillStyle = "#ffdf7e";
+    g.lineWidth = 3;
+    g.strokeText("設置予定", cc.x, cc.y - TILE*.50);
+    g.fillText("設置予定", cc.x, cc.y - TILE*.50);
+    g.restore();
+  }
+
+  // 選択中の敵情報ハイライト
+  if(game.selectedEnemyId){
+    const se = game.enemies.find(x => x.id === game.selectedEnemyId && !x.dead && !x.reached);
+    if(se){
+      g.strokeStyle = "rgba(255,223,126,.95)";
+      g.lineWidth = 2.4;
+      g.beginPath(); g.arc(se.x, se.y, se.boss ? TILE*.78 : TILE*.58, 0, Math.PI*2); g.stroke();
+    }
+  }
+
+  // 選択中武器の現在ターゲット可視化
+  const targetInfo = selectedTowerTarget();
+  if(targetInfo && targetInfo.target){
+    const tc = towerCenter(targetInfo.tower);
+    const tgt = targetInfo.target;
+    g.strokeStyle = "rgba(255,223,126,.75)";
+    g.lineWidth = 2;
+    g.setLineDash([5,4]);
+    g.beginPath(); g.moveTo(tc.x, tc.y); g.lineTo(tgt.x, tgt.y); g.stroke();
+    g.setLineDash([]);
+    drawEmoji(g, "🎯", tgt.x, tgt.y - TILE*.52, TILE*.34);
+    if(targetInfo.tower.type === "mortar"){
+      const st = towerStats(targetInfo.tower);
+      g.strokeStyle = "rgba(240,183,74,.45)";
+      g.lineWidth = 1.4;
+      g.beginPath(); g.arc(tgt.x, tgt.y, st.splash*TILE, 0, Math.PI*2); g.stroke();
+    }
+  }
+
+  // フロート文字
+  for(const f of game.floaters){
+    g.globalAlpha = Math.max(0, Math.min(1, f.life / f.maxLife));
+    g.fillStyle = f.color;
+    g.font = `900 ${f.size}px sans-serif`;
+    g.textAlign = "center";
+    g.lineWidth = 3;
+    g.strokeStyle = "rgba(0,0,0,.75)";
+    g.strokeText(f.text, f.x, f.y);
+    g.fillText(f.text, f.x, f.y);
+    g.globalAlpha = 1;
+  }
+}
+function showFloatText(x,y,text,color,life=0.75,size=13){
+  if(!game) return;
+  game.floaters.push({x,y,text,color,life,maxLife:life,size,rise:22});
+}
+
+function loop(now){
+  requestAnimationFrame(loop);
+  if(!lastFrame) lastFrame = now;
+  let dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+  if(dt > 0.05) dt = 0.05;
+  update(dt);
+  updateHud();
+  updateNotice();
+  render();
+}
+requestAnimationFrame(loop);
+
+function stagePointFromEvent(ev){
+  const rect = canvas.getBoundingClientRect();
+  const pt = ev.touches ? ev.touches[0] : ev;
+  const px = (pt.clientX - rect.left) * (BOARD_W / rect.width);
+  const py = (pt.clientY - rect.top) * (BOARD_H / rect.height);
+  return {px,py,col:Math.floor(px/TILE),row:Math.floor(py/TILE)};
+}
+function enemyAtPoint(px, py){
+  if(!game) return null;
+  let best = null;
+  let bestD = Infinity;
+  for(const e of game.enemies){
+    if(e.dead || e.reached) continue;
+    const hitR = e.dragon ? TILE*0.68 : e.boss ? TILE*0.62 : TILE*0.48;
+    const dx = px - e.x, dy = py - e.y;
+    const d2 = dx*dx + dy*dy;
+    if(d2 <= hitR*hitR && d2 < bestD){ best = e; bestD = d2; }
+  }
+  return best;
+}
+function selectedTowerTarget(){
+  if(!game || game.selectedTowerId == null) return null;
+  const t = game.towers.find(x => x.id === game.selectedTowerId);
+  if(!t || t.type === "support") return null;
+  return {tower:t, target:pickTarget(t, towerStats(t))};
+}
+let lastRealTouchAt = 0;
+let lastStageTapAt = 0;
+function handleStageTap(ev){
+  if(!game || game.over) return;
+  const now = performance.now();
+  if(ev.type === "touchstart"){
+    lastRealTouchAt = now;
+  } else if(ev.type === "mousedown" && now - lastRealTouchAt < 700){
+    return;
+  }
+  ev.preventDefault();
+  // 連打で同じ操作が連続発火するのを抑える。ズーム防止と誤配置防止のため。
+  if(now - lastStageTapAt < 140) return;
+  lastStageTapAt = now;
+  const p = stagePointFromEvent(ev);
+  if(p.col<0||p.col>=COLS||p.row<0||p.row>=ROWS) return;
+
+  // 1回目で射程確認、同じマスを2回目にタップしたら設置する。
+  if(game.pendingBuild && game.pendingBuild.col===p.col && game.pendingBuild.row===p.row && canPlaceAt(p.col,p.row)){
+    const type = game.pendingBuild.type;
+    placeTower(type, p.col, p.row);
+    return;
+  }
+
+  const enemy = enemyAtPoint(p.px, p.py);
+  if(enemy){
+    game.selectedCell = null;
+    game.selectedTowerId = null;
+    game.pendingBuild = null;
+    game.selectedEnemyId = enemy.id;
+    openEnemyMenu(enemy.id);
+    return;
+  }
+  const t = towerAt(p.col,p.row);
+  if(t){
+    game.selectedCell = null;
+    game.selectedEnemyId = null;
+    game.pendingBuild = null;
+    game.selectedTowerId = t.id;
+    openTowerMenu(t.id);
+    return;
+  }
+  game.selectedTowerId = null;
+  game.selectedEnemyId = null;
+  game.pendingBuild = null;
+  game.selectedCell = {col:p.col,row:p.row};
+  if(canPlaceAt(p.col,p.row)) openBuildMenu(p.col,p.row);
+  else openBlockedMenu(p.col,p.row);
+}
+canvas.addEventListener("touchstart", handleStageTap, {passive:false});
+canvas.addEventListener("mousedown", handleStageTap);
+
+function sheetOpen(){
+  // 下部メニューは固定オーバーレイ。盤面サイズは変えない。
+  document.getElementById("sheet").classList.remove("closed");
+}
+function closeSheet(clear=true){
+  document.getElementById("sheet").classList.add("closed");
+  if(clear && game){ game.selectedCell=null; game.selectedTowerId=null; game.selectedEnemyId=null; game.pendingBuild=null; }
+}
+document.getElementById("btnSheetClose").onclick = () => closeSheet(true);
+
+function setSheet(title, sub, html, opts={}){
+  const content = document.getElementById("sheetContent");
+  const oldScroll = content.scrollTop;
+  document.getElementById("sheetTitle").textContent = title;
+  document.getElementById("sheetSub").textContent = sub || "";
+  content.innerHTML = html;
+  sheetOpen();
+  if(opts.preserveScroll){
+    requestAnimationFrame(()=>{
+      content.scrollTop = oldScroll;
+    });
+  }
+}
+function refreshOpenSheet(){
+  if(!game) return;
+  const sheet = document.getElementById("sheet");
+  if(sheet.classList.contains("closed")) return;
+  if(game.selectedEnemyId != null) { openEnemyMenu(game.selectedEnemyId, false); }
+  else if(game.selectedTowerId != null) openTowerMenu(game.selectedTowerId, false);
+  else if(game.selectedCell) {
+    const {col,row} = game.selectedCell;
+    if(canPlaceAt(col,row)) {
+      const focusType = game.pendingBuild && game.pendingBuild.col===col && game.pendingBuild.row===row ? game.pendingBuild.type : null;
+      openBuildMenu(col,row, false, {preserveScroll:true, focusType});
+    } else openBlockedMenu(col,row, false);
+  }
+}
+function openBlockedMenu(col,row, resize=true){
+  let reason = "ここには置けません。";
+  if(isPath(col,row)) reason = "道の上には置けません。";
+  else if(towerAt(col,row)) reason = "すでに武器があります。";
+  setSheet("配置できないマス", `列${col+1}・行${row+1}`, `<div class="infoBox">${reason}<br><span class="muted">置けるマスは明るく表示されます。</span></div>`);
+}
+let lastBuildPointerAt = 0;
+function selectBuildType(type, col, row){
+  if(!game || game.over) return;
+  const d = TOWERS[type];
+  if(!d) return;
+  if(game.paused){ toast("一時停止中は設置できません"); return; }
+  if(!isUnlocked(type)){ toast(`${d.name}は第${d.unlock}波から解放`); return; }
+  if(game.money < d.cost){ toast("資金が足りません"); return; }
+  if(game.pendingBuild && game.pendingBuild.type===type && game.pendingBuild.col===col && game.pendingBuild.row===row){
+    placeTower(type, col, row);
+    return;
+  }
+  game.pendingBuild = {type, col, row};
+  game.selectedCell = {col, row};
+  game.selectedTowerId = null;
+  game.selectedEnemyId = null;
+  closeSheet(false);
+  render();
+}
+function bindBuildButton(btn, type, col, row){
+  const run = (ev) => {
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    const now = performance.now();
+    if(ev && ev.type === "click" && now - lastBuildPointerAt < 520) return;
+    if(ev && ev.type === "pointerup") lastBuildPointerAt = now;
+    selectBuildType(type, col, row);
+  };
+  btn.addEventListener("pointerup", run);
+  btn.addEventListener("click", run);
+}
+
+function openBuildMenu(col,row, resize=true, opts={}){
+  const paused = game.paused;
+  const pending = game.pendingBuild && game.pendingBuild.col===col && game.pendingBuild.row===row ? game.pendingBuild.type : null;
+  const cards = TOWER_ORDER.map(id => {
+    const d = TOWERS[id];
+    const locked = !isUnlocked(id);
+    const poor = game.money < d.cost;
+    const active = pending === id;
+    const disabled = paused || locked || poor;
+    const note = locked ? `第${d.unlock}波から解放` : poor ? "資金不足" : paused ? "一時停止中は設置不可" : active ? "選択中" : "";
+    const noteHtml = note ? `<br><span class="muted">${note}</span>` : "";
+    return `<button class="weaponItem ${disabled?'disabled':''} ${active?'selected':''}" data-build="${id}" ${disabled?'disabled':''}>
+      <div class="weaponEmoji">${d.emoji}</div>
+      <div><div class="weaponName">${d.name}</div><div class="weaponDesc">${d.role}。${d.detail}</div></div>
+      <div class="weaponCost">${d.cost}${noteHtml}</div>
+    </button>`;
+  }).join("");
+  setSheet("武器を設置", `列${col+1}・行${row+1} / 資金 ${fmt(game.money)}`, `<div class="weaponList">${cards}</div>`, {preserveScroll:!!opts.preserveScroll});
+  document.querySelectorAll("[data-build]").forEach(btn => {
+    bindBuildButton(btn, btn.dataset.build, col, row);
+  });
+}
+function statLinesFor(type, st){
+  const r = n => Math.round(n * 10) / 10;
+  const sec = n => (Math.round(n * 100) / 100).toFixed(2);
+  if(type === "support"){
+    return [`攻撃補助 +${Math.round(st.buffDmg*100)}%`, `速度補助 +${Math.round(st.buffRate*100)}%`, `範囲 上下左右1マス`, `斜めには届かない`];
+  }
+  if(type === "mortar") return [`ダメージ ${Math.round(st.dmg)}`, `爆風 ${r(st.splash)}マス`, `射程 ${r(st.minRange/TILE)}〜${r(st.range/TILE)}マス`];
+  if(type === "dot") return [`燃焼 ${Math.round(st.burnDps)}/秒`, `燃焼時間 ${sec(st.burnDur)}秒`, `重複なし / 射程 ${r(st.range/TILE)}マス`];
+  if(type === "ice") return [`減速率 ${Math.round((1-st.slow)*100)}%`, `減速時間 ${sec(st.slowDur)}秒`, `射程 ${r(st.range/TILE)}マス`];
+  if(type === "pierce") return [`ダメージ ${Math.round(st.dmg)}`, `貫通減衰 100→85→70→55%`, `射程 ${r(st.range/TILE)}マス`];
+  if(type === "breaker") return [`ダメージ ${Math.round(st.dmg)}`, `破砕 ${sec(st.debuff)}秒`, `重複なし / 射程 ${r(st.range/TILE)}マス`];
+  return [`ダメージ ${Math.round(st.dmg)}`, `攻撃間隔 ${sec(st.interval)}秒`, `射程 ${r(st.range/TILE)}マス`];
+}
+function statCompareHtml(type, cur, next){
+  const curLines = statLinesFor(type, cur);
+  const nextLines = statLinesFor(type, next);
+  return `<div class="compareGrid"><div><b>現在</b><br>${curLines.join("<br>")}</div><div><b>強化後</b><br>${nextLines.join("<br>")}</div></div>`;
+}
+
+function towerIconList(map){
+  const ids = Object.keys(map || {});
+  const icons = ids.map(id => TOWERS[id]?.emoji).filter(Boolean);
+  return icons.length ? icons.join(" ") : "なし";
+}
+function enemyFeatureText(e){
+  const parts = [];
+  if(e.boss) parts.push(e.dragon ? "最終ボス" : "ボス");
+  if(e.armor) parts.push("装甲");
+  if(ENEMIES[e.type].regen) parts.push("回復");
+  if(ENEMIES[e.type].slowResist != null && ENEMIES[e.type].slowResist < 0.5) parts.push("❄️耐性");
+  if(e.accel) parts.push("加速");
+  if(e.split) parts.push("分裂");
+  return parts.length ? parts.join(" / ") : (e.role || "通常");
+}
+function openEnemyMenu(enemyId, resize=true){
+  const e = game.enemies.find(x => x.id === enemyId && !x.dead && !x.reached);
+  if(!e){ closeSheet(true); return; }
+  const base = ENEMIES[e.type];
+  const ratio = Math.max(0, Math.min(1, e.hp/e.maxHp));
+  const hpText = `${fmt(Math.ceil(e.hp))} / ${fmt(e.maxHp)}`;
+  const html = `
+    <div class="infoBox"><b>${e.emoji}</b>　${enemyFeatureText(e)}<div class="hpBarBox"><div class="hpBarFill" style="width:${Math.round(ratio*100)}%"></div></div><b>HP ${hpText}</b></div>
+    <div class="infoBox"><b>有効：</b>${towerIconList(base.weak)}<br><b>効きにくい：</b>${towerIconList(base.resist)}<br><span class="muted">${base.tip || ""}</span></div>
+    <div class="small">敵を選ぶと、現在HPと耐性を確認できます。🐉のような高HP敵は、残りHPを見て売却・再配置を判断してください。</div>`;
+  setSheet(`${e.emoji} 敵情報`, `第${Math.min(30, game.waveIndex+1)}波`, html);
+}
+
+function openTowerMenu(towerId, resize=true){
+  const t = game.towers.find(x => x.id === towerId);
+  if(!t){ closeSheet(true); return; }
+  const d = TOWERS[t.type];
+  const st = t.type === "support" ? supportStats(t) : towerStats(t);
+  const nextSt = t.level < UPGRADE_MAX ? (t.type === "support" ? supportStats(t, t.level + 1) : towerStats(t, t.level + 1, true)) : null;
+  const paused = game.paused;
+  const sellVal = sellValue(t);
+  const upCost = t.level >= UPGRADE_MAX ? null : upgradeCost(t);
+  const canUpgrade = !paused && t.level < UPGRADE_MAX && game.money >= upCost;
+  const refundNote = sellNote(t);
+  let currentTargetInfo = "";
+  if(t.type !== "support"){
+    const tgt = pickTarget(t, st);
+    currentTargetInfo = `<div class="infoBox"><b>現在の狙い：</b>${tgt ? `${tgt.emoji} HP ${fmt(Math.ceil(tgt.hp))}/${fmt(tgt.maxHp)}` : "標的なし"}<br><span class="muted">選択中は盤面上の対象に🎯を表示します。</span></div>`;
+  }
+  const targetHtml = d.targets.length ? `<div class="infoBox"><b>標的：</b>${TARGET_LABELS[t.target] || "なし"}<div class="targetGrid" style="margin-top:8px;">${d.targets.map(target => `<button class="miniBtn ${t.target===target?'on':''}" data-target="${target}" ${paused?'disabled':''}>${TARGET_LABELS[target]}</button>`).join("")}</div>${paused?'<div class="small">一時停止中は標的変更できません。</div>':''}</div>` : `<div class="infoBox">🔮支援は攻撃しないため、標的設定はありません。<br><span class="muted">実際の支援対象は上下左右の隣接武器だけです。</span></div>`;
+  const compare = nextSt ? statCompareHtml(t.type, st, nextSt) : `<div class="infoBox"><b>現在性能</b><br>${statLinesFor(t.type, st).join("<br>")}<br><span class="muted">最大Lvです。これ以上は強化できません。</span></div>`;
+  const html = `
+    <div class="infoBox"><b>${d.emoji} ${d.name} Lv${t.level}</b><br>${d.detail}${t.type !== "support" && isTowerSupported(t) ? "<br><span class=\"muted\">現在：🔮支援込みの性能です。強化後も同じ支援条件で比較しています。</span>" : ""}</div>
+    ${compare}
+    ${currentTargetInfo}
+    ${targetHtml}
+    <div class="actionGrid">
+      <button id="btnUpgradeTower" class="good" ${!canUpgrade?'disabled':''}>${t.level>=UPGRADE_MAX?'最大Lv':`強化 ${upCost}`}</button>
+      <button id="btnSellTower" class="bad" ${paused?'disabled':''}>売却 ${sellVal}</button>
+    </div>
+    <div class="small">売却：${refundNote}${paused?' / 一時停止中は売却不可':''}${t.level<UPGRADE_MAX && game.money < upCost ? ' / 資金不足' : ''}</div>`;
+  setSheet(`${d.emoji} ${d.name}`, `資金 ${fmt(game.money)}`, html);
+  document.querySelectorAll("[data-target]").forEach(btn => {
+    btn.onclick = () => { if(game.paused) return; t.target = btn.dataset.target; openTowerMenu(t.id); };
+  });
+  const up = document.getElementById("btnUpgradeTower");
+  if(up) up.onclick = () => upgradeTower(t.id);
+  const sell = document.getElementById("btnSellTower");
+  if(sell) sell.onclick = () => sellTower(t.id);
+}
+function sellValue(t){
+  return Math.floor(t.invested * SELL_RATE);
+}
+function sellNote(t){
+  return "売却額は投資額の70%です";
+}
+function upgradeTower(id){
+  const t = game.towers.find(x=>x.id===id);
+  if(!t) return;
+  if(game.paused){ toast("一時停止中は強化できません"); return; }
+  if(t.level >= UPGRADE_MAX) return;
+  const cost = upgradeCost(t);
+  if(game.money < cost){ toast("資金が足りません"); return; }
+  game.money -= cost;
+  t.invested += cost;
+  t.level++;
+  updateHud();
+  openTowerMenu(t.id);
+}
+function sellTower(id){
+  const t = game.towers.find(x=>x.id===id);
+  if(!t) return;
+  if(game.paused){ toast("一時停止中は売却できません"); return; }
+  const val = sellValue(t);
+  game.money += val;
+  game.towers = game.towers.filter(x=>x.id!==id);
+  game.selectedTowerId = null;
+  updateHud();
+  closeSheet(true);
+  toast(`売却 +${val}`);
+}
+
+function lockHistory(){
+  if(historyLocked) return;
+  historyLocked = true;
+  try{ history.pushState({gameLock:true}, ""); }catch(e){}
+}
+function unlockHistory(){ historyLocked = false; }
+window.addEventListener("popstate", () => {
+  if(historyLocked && game && !game.over){
+    try{ history.pushState({gameLock:true}, ""); }catch(e){}
+    toast("プレイ中です");
+  }
+});
+
+function shareText(text){
+  if(navigator.share){ navigator.share({text}).catch(()=>{}); return; }
+  navigator.clipboard?.writeText(text).then(()=>toast("コピーしました"),()=>toast("コピーできませんでした"));
+}
+function resultShareText(){
+  if(!resultPayload) return `${GAME_TITLE}\n${PUBLIC_URL}`;
+  return `${GAME_TITLE}で遊んだ！\n${resultPayload.cleared?'結果：クリア':'結果：敗北'}\nクリア波数：${resultPayload.clearWave}波\nスコア：${fmt(resultPayload.score)}点\n${PUBLIC_URL}`;
+}
+
+
+function guideEscape(s){
+  return String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
+}
+function towerEmojiList(map){
+  const ids = Object.keys(map || {});
+  if(!ids.length) return "なし";
+  return ids.map(id => TOWERS[id]?.emoji || "").filter(Boolean).join(" ") || "なし";
+}
+function fmtRangeText(d){
+  if(d.type === "buff") return "範囲：上下左右1マス";
+  if(d.minRange) return `射程：${d.minRange.toFixed(1)}〜${d.range.toFixed(1)}マス`;
+  return `射程：${d.range.toFixed(1)}マス`;
+}
+function towerGuideUseful(id){
+  const map = {
+    rapid:{good:"🐁🐇🐈", weak:"🦏🐘🐉", note:"小型処理向け"},
+    mortar:{good:"🐕🐈", weak:"🐃🦏🐘🐉", note:"最低射程あり。赤いマスは撃てない"},
+    ice:{good:"🐇🐅🐃", weak:"🐊🦏🦍🐘🐉", note:"足止め役。倒す武器と組み合わせる"},
+    sniper:{good:"🐊🐃🐘🐉", weak:"🐕🐈", note:"群れには弱い"},
+    breaker:{good:"🦏🐃🐘🐉", weak:"🐁🐇🐕", note:"破砕は重複しない"},
+    dot:{good:"🦍🦏", weak:"🐇🐅", note:"燃焼は重複しない"},
+    pierce:{good:"直線の群れ", weak:"曲がり角・単体大物", note:"貫くほど威力が下がる"},
+    support:{good:"上下左右の武器", weak:"単体では攻撃不可", note:"斜めには届かない。重複しない"}
+  };
+  return map[id] || {good:"-", weak:"-", note:"-"};
+}
+
+function firstWaveOfEnemy(id){
+  if(id === "kitten") return "🐈撃破後";
+  for(let i=0;i<WAVES.length;i++){
+    if(WAVES[i].m && Object.prototype.hasOwnProperty.call(WAVES[i].m, id)) return `第${i+1}波`;
+  }
+  return "-";
+}
+
+function towerGuideHtml(){
+  const intro = `<div class="guideIntro">空きマスを選ぶと武器一覧が出ます。武器選択後は盤面で射程を確認できます。</div>`;
+  const items = TOWER_ORDER.map(id => {
+    const d = TOWERS[id];
+    const unlock = d.unlock <= 1 ? "最初から" : `第${d.unlock}波から`;
+    const target = d.targets && d.targets.length ? d.targets.map(t => TARGET_LABELS[t] || t).join(" / ") : "なし";
+    const extra = towerGuideUseful(id);
+    return `<div class="guideItem">
+      <div class="guideIcon">${d.emoji}</div>
+      <div>
+        <div class="guideName">${d.name}</div>
+        <div class="guideText">${guideEscape(d.detail)}</div>
+        <div class="guideMeta">
+          <span class="guideBadge">${unlock}</span>
+          <span class="guideBadge">設置 ${fmt(d.cost)}</span>
+          <span class="guideBadge">強化 ${fmt(d.upgrade)}</span>
+          <span class="guideBadge">${fmtRangeText(d)}</span>
+          <span class="guideBadge">標的：${guideEscape(target)}</span>
+          <span class="guideBadge">有効：${guideEscape(extra.good)}</span>
+          <span class="guideBadge">効きにくい：${guideEscape(extra.weak)}</span>
+          <span class="guideBadge">注意：${guideEscape(extra.note)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  return intro + items;
+}
+function enemyGuideHtml(){
+  const order = ["mouse","rabbit","dog","cat","kitten","tiger","croc","buffalo","rhino","gorilla","elephant","dragon"];
+  const intro = `<div class="guideIntro">敵が1体でも👨‍🌾に到達したら負けです。通常敵は後半ほどHPが上がります。敵をタップすると、ゲーム中にも現在HPと相性を確認できます。</div>`;
+  const items = order.map(id => {
+    const e = ENEMIES[id];
+    const weak = towerEmojiList(e.weak);
+    const resist = towerEmojiList(e.resist);
+    const tags = [];
+    if(id === "elephant") tags.push(`<span class="guideBadge">HP ${fmt(BOSS_HP[10])} / ${fmt(BOSS_HP[20])}</span>`);
+    else if(id === "dragon") tags.push(`<span class="guideBadge">HP ${fmt(BOSS_HP[30])}</span>`);
+    else tags.push(`<span class="guideBadge">基本HP ${fmt(e.hp)} / 後半強化</span>`);
+    tags.push(`<span class="guideBadge">速さ ${e.sp.toFixed(2)}</span>`);
+    tags.push(`<span class="guideBadge">初登場 ${firstWaveOfEnemy(id)}</span>`);
+    if(e.armor) tags.push(`<span class="guideBadge">装甲</span>`);
+    if(e.regen) tags.push(`<span class="guideBadge">回復</span>`);
+    if(e.boss) tags.push(`<span class="guideBadge">ボス</span>`);
+    if(e.split) tags.push(`<span class="guideBadge">分裂</span>`);
+    if(e.accel) tags.push(`<span class="guideBadge">加速</span>`);
+    return `<div class="guideItem">
+      <div class="guideIcon">${e.emoji}</div>
+      <div>
+        <div class="guideName">${guideEscape(e.role || e.name)}</div>
+        <div class="guideText">${guideEscape(e.tip || "")}</div>
+        <div class="guideMeta">
+          ${tags.join("")}
+          <span class="guideBadge">有効：${weak}</span>
+          <span class="guideBadge">効きにくい：${resist}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  return intro + items;
+}
+function setGuideTab(kind){
+  const k = kind === "enemies" ? "enemies" : "towers";
+  const content = $("guideContent");
+  if(!content) return;
+  content.innerHTML = k === "towers" ? towerGuideHtml() : enemyGuideHtml();
+  $("guideTabTowers")?.classList.toggle("on", k === "towers");
+  $("guideTabEnemies")?.classList.toggle("on", k === "enemies");
+  content.scrollTop = 0;
+}
+function openGuideModal(kind="towers"){
+  setGuideTab(kind);
+  const modal = $("guideModal");
+  modal.classList.add("show");
+  modal.setAttribute("aria-hidden", "false");
+}
+function closeGuideModal(){
+  const modal = $("guideModal");
+  modal.classList.remove("show");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+// ボタン
+const $ = (id) => document.getElementById(id);
+$("btnStart").onclick = openNameInput;
+$("btnNameBack").onclick = () => showScreen("homeScreen");
+$("btnNameOk").onclick = startGame;
+$("btnRetry").onclick = () => startGame();
+$("btnHome").onclick = () => { game=null; showScreen("homeScreen"); };
+$("btnOther").onclick = () => { location.href = "https://chameleonjp.codeberg.page/chameleonjp_lab/"; };
+$("btnOtherResult").onclick = () => { location.href = "https://chameleonjp.codeberg.page/chameleonjp_lab/"; };
+$("btnShareHome").onclick = () => shareText(`${GAME_TITLE}\nヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。\n${PUBLIC_URL}`);
+$("btnShareResult").onclick = () => shareText(resultShareText());
+$("btnRules").onclick = () => alert("空きマスをタップして武器を選びます。\n武器を選ぶと、盤面に射程と設置予定が表示されます。\n同じマスをもう一度タップすると設置します。\n武器ごとに得意な敵が違います。\n敵が👨‍🌾に1体でも到達したら負けです。\n30波を守り切ればクリアです。");
+$("btnGuide").onclick = () => openGuideModal("towers");
+$("guideClose").onclick = closeGuideModal;
+$("guideTabTowers").onclick = () => setGuideTab("towers");
+$("guideTabEnemies").onclick = () => setGuideTab("enemies");
+$("guideModal").addEventListener("click", (e) => { if(e.target && e.target.id === "guideModal") closeGuideModal(); });
+$("btnPause").onclick = () => {
+  if(!game || game.over) return;
+  game.paused = !game.paused;
+  $("btnPause").textContent = game.paused ? "▶" : "⏸";
+  refreshUi();
+};
+$("btnSpeed").onclick = () => {
+  if(!game || game.over) return;
+  game.speed = game.speed === 1 ? 2 : 1;
+  $("btnSpeed").textContent = game.speed + "倍";
+  refreshUi();
+};
+
+// 保存済みの名前を初期表示する。
+try {
+  const savedName = loadSavedPlayerName();
+  if(savedName) $("nameInput").value = savedName;
+} catch(e) {}
+
+// 画面スクロール防止。ただし下部メニュー内のスクロール・操作は邪魔しない。
+document.addEventListener("touchmove", (e) => {
+  if(e.target.closest && (e.target.closest(".sheet") || e.target.closest(".guideModal"))) return;
+  if(document.getElementById("gameScreen").classList.contains("active")) e.preventDefault();
+}, {passive:false});
+
+</script>
+</body>
+</html>
