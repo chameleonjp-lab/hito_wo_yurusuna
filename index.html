@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1, minimum-scale=1">
 <meta name="format-detection" content="telephone=no">
 <title>ヒトを許すな！</title>
+<meta name="description" content="ヒトを許さない動物たちが攻めてくる。武器を置いて👨‍🌾を守るタワーディフェンス。全30波を守り切れ！">
+<meta name="theme-color" content="#0a0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ヒトを許すな！">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ヒトを許すな！">
+<meta property="og:description" content="ヒトを許さない動物たちが攻めてくる。武器を置いて👨‍🌾を守れ。全30波を守り切ればクリア！">
+<meta property="og:url" content="https://chameleonjp.codeberg.page/hito_wo_yurusuna/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
 <style>
   :root{
     --bg:#0a0d12;
@@ -124,6 +136,11 @@
 
 .compareGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}.compareGrid>div{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:9px;font-size:12px;line-height:1.55}.compareGrid b{color:#ffdf7e}
 
+  @media (prefers-reduced-motion: reduce){
+    .pill.danger{animation:none;}
+    .sheet{transition:none;}
+  }
+
 </style>
 </head>
 <body>
@@ -160,6 +177,22 @@
   </div>
 </div>
 
+<div id="rulesModal" class="guideBackdrop" aria-hidden="true">
+  <div class="guideModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="guideHead">
+      <h2 id="rulesTitle">ルール説明</h2>
+      <button id="rulesClose" class="miniBtn ghost">閉じる</button>
+    </div>
+    <div class="guideContent">
+      <div class="guideIntro">空きマスをタップして武器を選び、動物たちから👨‍🌾を守るタワーディフェンスです。</div>
+      <div class="guideItem"><div class="guideIcon">①</div><div><div class="guideName">武器を選ぶ</div><div class="guideText">空きマスをタップすると武器一覧が出ます。武器を選ぶと盤面に射程と「設置予定」が表示されます。</div></div></div>
+      <div class="guideItem"><div class="guideIcon">②</div><div><div class="guideName">もう一度タップで設置</div><div class="guideText">同じマスをもう一度タップすると設置完了。設置後はタップで強化・売却・狙い方の変更ができます。</div></div></div>
+      <div class="guideItem"><div class="guideIcon">③</div><div><div class="guideName">相性を意識する</div><div class="guideText">武器ごとに得意な敵が違います。上部の「弱点」表示や「武器・動物」図鑑を参考に組み合わせましょう。</div></div></div>
+      <div class="guideItem"><div class="guideIcon">🚩</div><div><div class="guideName">勝敗</div><div class="guideText">敵が1体でも👨‍🌾に到達したら負け。全30波を守り切ればクリアです。</div></div></div>
+    </div>
+  </div>
+</div>
+
 <section id="nameScreen" class="screen name">
   <div class="card">
     <h2>名前を入力</h2>
@@ -183,8 +216,8 @@
           <span class="pill" id="statusPill">準備</span>
         </div>
       </div>
-      <button id="btnPause" class="hudBtn ghost">⏸</button>
-      <button id="btnSpeed" class="hudBtn ghost">1倍</button>
+      <button id="btnPause" class="hudBtn ghost" aria-label="一時停止 / 再開">⏸</button>
+      <button id="btnSpeed" class="hudBtn ghost" aria-label="ゲーム速度の切り替え">1倍</button>
     </div>
     <div class="notice">
       <div class="main" id="nextInfo">次の波を準備中。</div>
@@ -453,6 +486,11 @@ function pathPos(dist){
 function distSq(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return dx*dx + dy*dy; }
 function fmt(n){ return Math.round(n).toLocaleString("ja-JP"); }
 
+// DOM 書き込みは値が変わったときだけ行う。毎フレームの textContent/innerHTML 更新による
+// 不要な再パース・再レイアウトを避ける（挙動は不変）。
+function setText(el, text){ if(el && el.textContent !== text) el.textContent = text; }
+function setHtml(el, html){ if(el && el._html !== html){ el.innerHTML = html; el._html = html; } }
+
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -557,16 +595,18 @@ function waveNumber(){ return Math.min(30, game.waveIndex + 1); }
 function isUnlocked(towerId){ return waveNumber() >= TOWERS[towerId].unlock; }
 function updateHud(){
   if(!game) return;
-  document.getElementById("wavePill").textContent = `第${Math.min(30, game.waveIndex+1)}波`;
-  document.getElementById("moneyPill").textContent = `資金 ${fmt(game.money)}`;
+  setText(document.getElementById("wavePill"), `第${Math.min(30, game.waveIndex+1)}波`);
+  setText(document.getElementById("moneyPill"), `資金 ${fmt(game.money)}`);
   const st = document.getElementById("statusPill");
-  st.classList.remove("danger");
-  if(game.paused) st.textContent = "一時停止";
-  else if(hasDangerEnemy()){ st.textContent = "突破されそう！"; st.classList.add("danger"); }
-  else if(game.phase === "prep") st.textContent = `初期配置 ${Math.ceil(game.nextTimer)}秒`;
-  else if(game.phase === "between") st.textContent = `次まで ${Math.ceil(game.nextTimer)}秒`;
-  else if(game.phase === "wave") st.textContent = `進行中 ×${game.speed}`;
-  else st.textContent = "終了";
+  let text, danger = false;
+  if(game.paused) text = "一時停止";
+  else if(hasDangerEnemy()){ text = "突破されそう！"; danger = true; }
+  else if(game.phase === "prep") text = `初期配置 ${Math.ceil(game.nextTimer)}秒`;
+  else if(game.phase === "between") text = `次まで ${Math.ceil(game.nextTimer)}秒`;
+  else if(game.phase === "wave") text = `進行中 ×${game.speed}`;
+  else text = "終了";
+  setText(st, text);
+  if(st.classList.contains("danger") !== danger) st.classList.toggle("danger", danger);
 }
 function previewWaveText(wIndex){
   const w = WAVES[wIndex];
@@ -594,13 +634,13 @@ function updateNotice(){
   const next = document.getElementById("nextInfo");
   const advice = document.getElementById("adviceInfo");
   if(game.phase === "wave"){
-    next.innerHTML = `<b>第${game.waveIndex+1}波</b> 進行中　残り ${game.enemies.filter(e=>!e.dead).length + game.queue.length}体`;
+    setHtml(next, `<b>第${game.waveIndex+1}波</b> 進行中　残り ${game.enemies.filter(e=>!e.dead).length + game.queue.length}体`);
   } else if(game.phase === "over"){
-    next.textContent = "結果画面へ移動します。";
+    setHtml(next, "結果画面へ移動します。");
   } else {
-    next.innerHTML = `<b>${previewWaveText(game.waveIndex)}</b>　${previewWeakText(game.waveIndex)}`;
+    setHtml(next, `<b>${previewWaveText(game.waveIndex)}</b>　${previewWeakText(game.waveIndex)}`);
   }
-  advice.textContent = FIRST_APPEAR_TIP[game.waveIndex+1] || game.currentAdvice || "";
+  setText(advice, FIRST_APPEAR_TIP[game.waveIndex+1] || game.currentAdvice || "");
 }
 function refreshUi(){ updateHud(); updateNotice(); refreshOpenSheet(); }
 
@@ -948,8 +988,15 @@ function pickTarget(t, st){
   else if(target === "regen") arr.sort((a,b)=>(ENEMIES[b.type].regen||0)-(ENEMIES[a.type].regen||0) || b.hp-a.hp);
   else if(target === "armor") arr.sort((a,b)=>(b.armor?1:0)-(a.armor?1:0) || b.hp-a.hp);
   else if(target === "buffalo") arr.sort((a,b)=>(b.type==="buffalo"?1:0)-(a.type==="buffalo"?1:0) || b.dist-a.dist);
-  else if(target === "dense") arr.sort((a,b)=>densityScore(b)-densityScore(a) || b.dist-a.dist);
-  else if(target === "line") arr.sort((a,b)=>lineScore(t,b,st)-lineScore(t,a,st) || b.dist-a.dist);
+  else if(target === "dense"){
+    // スコアを敵ごとに1回だけ計算してからソートする（比較関数内での再計算 O(n²) を回避）。
+    const sc = new Map(arr.map(e => [e, densityScore(e)]));
+    arr.sort((a,b)=>sc.get(b)-sc.get(a) || b.dist-a.dist);
+  }
+  else if(target === "line"){
+    const sc = new Map(arr.map(e => [e, lineScore(t,e,st)]));
+    arr.sort((a,b)=>sc.get(b)-sc.get(a) || b.dist-a.dist);
+  }
   else arr.sort((a,b)=>b.dist-a.dist);
   return arr[0];
 }
@@ -1656,6 +1703,7 @@ function selectBuildType(type, col, row){
   game.selectedEnemyId = null;
   closeSheet(false);
   render();
+  toast(`${d.emoji}${d.name}：設置するマスをもう一度タップ`);
 }
 function bindBuildButton(btn, type, col, row){
   const run = (ev) => {
@@ -1945,6 +1993,16 @@ function closeGuideModal(){
   modal.classList.remove("show");
   modal.setAttribute("aria-hidden", "true");
 }
+function openRulesModal(){
+  const modal = $("rulesModal");
+  modal.classList.add("show");
+  modal.setAttribute("aria-hidden", "false");
+}
+function closeRulesModal(){
+  const modal = $("rulesModal");
+  modal.classList.remove("show");
+  modal.setAttribute("aria-hidden", "true");
+}
 
 // ボタン
 const $ = (id) => document.getElementById(id);
@@ -1957,12 +2015,14 @@ $("btnOther").onclick = () => { location.href = "https://chameleonjp.codeberg.pa
 $("btnOtherResult").onclick = () => { location.href = "https://chameleonjp.codeberg.page/chameleonjp_lab/"; };
 $("btnShareHome").onclick = () => shareText(`${GAME_TITLE}\nヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。\n${PUBLIC_URL}`);
 $("btnShareResult").onclick = () => shareText(resultShareText());
-$("btnRules").onclick = () => alert("空きマスをタップして武器を選びます。\n武器を選ぶと、盤面に射程と設置予定が表示されます。\n同じマスをもう一度タップすると設置します。\n武器ごとに得意な敵が違います。\n敵が👨‍🌾に1体でも到達したら負けです。\n30波を守り切ればクリアです。");
+$("btnRules").onclick = () => openRulesModal();
 $("btnGuide").onclick = () => openGuideModal("towers");
 $("guideClose").onclick = closeGuideModal;
 $("guideTabTowers").onclick = () => setGuideTab("towers");
 $("guideTabEnemies").onclick = () => setGuideTab("enemies");
 $("guideModal").addEventListener("click", (e) => { if(e.target && e.target.id === "guideModal") closeGuideModal(); });
+$("rulesClose").onclick = closeRulesModal;
+$("rulesModal").addEventListener("click", (e) => { if(e.target && e.target.id === "rulesModal") closeRulesModal(); });
 $("btnPause").onclick = () => {
   if(!game || game.over) return;
   game.paused = !game.paused;
