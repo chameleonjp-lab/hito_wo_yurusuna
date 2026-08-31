@@ -105,6 +105,7 @@
   .stat{display:flex;justify-content:space-between;gap:10px;background:#0e1420;border:1px solid #2d3c59;border-radius:12px;padding:10px;}
   .stat b{color:#ffdf7e;}
   .resultMessage{background:#0e1420;border:1px solid #33405e;border-radius:14px;padding:12px;line-height:1.7;color:#e9dfcf;}
+  .shareTextBox{width:100%;min-height:118px;box-sizing:border-box;resize:vertical;background:#0b111b;color:#e9dfcf;border:1px solid #33405e;border-radius:12px;padding:10px;font-size:13px;line-height:1.55;user-select:text;-webkit-user-select:text;}
 
   @media (min-width:560px){
     .weaponList{grid-template-columns:1fr 1fr;}
@@ -174,7 +175,7 @@
       <button id="btnRules" class="ghost">ルール説明</button>
       <button id="btnGuide" class="ghost">武器・動物</button>
       <button id="btnShareHome" class="ghost">ゲームをシェア</button>
-      <button id="btnOther" class="ghost">他のゲームで遊ぶ</button>
+      <button id="btnOther" class="ghost">カメレオンJPの実験場へ</button>
     </div>
   </div>
 </section>
@@ -212,7 +213,7 @@
 <section id="nameScreen" class="screen name">
   <div class="card">
     <h2>名前を入力</h2>
-    <p>ランキングに使う名前です。この端末に保存され、次回も表示されます。未入力なら「名無しの守り手」になります。</p>
+    <p>ランキングに使う名前です。この端末に保存され、次回も表示されます。名前を入力しないとゲームを開始できません。</p>
     <input id="nameInput" maxlength="16" placeholder="名前">
     <div class="btns">
       <button id="btnNameOk" class="primary">この名前で始める</button>
@@ -267,13 +268,14 @@
     <h1 id="resultTitle">結果</h1>
     <div id="resultMessage" class="resultMessage"></div>
     <div id="resultStats" class="resultStats"></div>
+    <textarea id="resultShareText" class="shareTextBox" readonly aria-label="結果のシェア文"></textarea>
     <p id="rankStatus" class="small">ランキング登録：確認中</p>
     <div id="rankingBox" class="resultStats"></div>
     <div class="btns">
       <button id="btnRetry" class="primary">もう一度プレイ</button>
       <button id="btnHome" class="ghost">ホームへ戻る</button>
-      <button id="btnShareResult" class="ghost">結果をシェア</button>
-      <button id="btnOtherResult" class="ghost">他のゲームで遊ぶ</button>
+      <button id="btnShareResult" class="ghost">結果をシェア／コピー</button>
+      <button id="btnOtherResult" class="ghost">カメレオンJPの実験場へ</button>
     </div>
   </div>
 </section>
@@ -291,7 +293,7 @@
 
 const GAME_SLUG = "hito_wo_yurusuna";
 const GAME_TITLE = "ヒトを許すな！";
-const PUBLIC_URL = "https://chameleonjp.codeberg.page/hito_wo_yurusuna/";
+const PUBLIC_URL = "https://chameleonjp-lab.github.io/hito_wo_yurusuna/";
 const CLIENT_VERSION = "hito_wo_yurusuna_v10_9_common_ranking_20260619";
 
 // カメレオンJP共通ランキング接続設定。Publishable keyのみを使用し、secret keyは使わない。
@@ -667,7 +669,7 @@ function refreshUi(){ updateHud(); updateNotice(); refreshOpenSheet(); }
 
 function normalizePlayerName(value){
   const text = String(value || "").trim().replace(/\s+/g, " ");
-  return text ? text.slice(0,16) : "名無しの守り手";
+  return text ? text.slice(0,16) : "";
 }
 function loadSavedPlayerName(){
   try { return localStorage.getItem(PLAYER_NAME_KEY) || ""; } catch(e) { return ""; }
@@ -687,6 +689,11 @@ function openNameInput(){
 function startGame(){
   const rawName = document.getElementById("nameInput").value;
   const name = savePlayerName(rawName);
+  if(!name){
+    toast("名前を入力してください");
+    document.getElementById("nameInput").focus();
+    return;
+  }
   game = newGame(name);
   resultPayload = null;
   showScreen("gameScreen");
@@ -1228,6 +1235,8 @@ function showResult(){
     ["撃破", `${fmt(r.kills)}体`],
     ["残り資金", `${fmt(r.money)}`]
   ].map(([k,v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
+  const shareBox = document.getElementById("resultShareText");
+  if(shareBox) shareBox.value = detailedResultShareText();
   const rs = document.getElementById("rankStatus");
   const rankingBox = document.getElementById("rankingBox");
   if(rankingBox) rankingBox.innerHTML = "";
@@ -1932,6 +1941,11 @@ function resultShareText(){
 }
 
 
+function detailedResultShareText(){
+  if(!resultPayload) return `${GAME_TITLE}\n${PUBLIC_URL}`;
+  return `${GAME_TITLE}で遊んだ！\n${resultPayload.playerName}の結果：${resultPayload.cleared?'クリア':'敗北'}\nクリア波数：${resultPayload.clearWave}波\nスコア：${fmt(resultPayload.score)}点\n撃破：${fmt(resultPayload.kills)}体 / 残り資金：${fmt(resultPayload.money)}\n${PUBLIC_URL}\n#ヒトを許すな #カメレオンJP`;
+}
+
 function guideEscape(s){
   return String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
 }
@@ -2068,7 +2082,7 @@ $("btnHome").onclick = () => { game=null; showScreen("homeScreen"); };
 $("btnOther").onclick = () => { location.href = "https://chameleonjp-lab.github.io/chameleonjp_lab/"; };
 $("btnOtherResult").onclick = () => { location.href = "https://chameleonjp-lab.github.io/chameleonjp_lab/"; };
 $("btnShareHome").onclick = () => shareText(`${GAME_TITLE}\nヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。\n${PUBLIC_URL}`);
-$("btnShareResult").onclick = () => shareText(resultShareText());
+$("btnShareResult").onclick = () => shareText(detailedResultShareText());
 $("btnRules").onclick = () => openRulesModal();
 $("btnGuide").onclick = () => openGuideModal("towers");
 $("guideClose").onclick = closeGuideModal;
