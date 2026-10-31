@@ -174,7 +174,7 @@
       <button id="btnStart" class="primary">ゲーム開始</button>
       <button id="btnRules" class="ghost">ルール説明</button>
       <button id="btnGuide" class="ghost">武器・動物</button>
-      <button id="btnShareHome" class="ghost">ゲームをシェア</button>
+      <button id="btnShareHome" class="ghost common-x-share">Xでシェア</button><a class="common-ranking-link" href="https://chameleonjp-lab.github.io/chameleonjp_lab/ranking.html?game=hito_wo_yurusuna">ランキング</a>
       <button id="btnOther" class="ghost">カメレオンJPの実験場へ</button>
     </div>
   </div>
@@ -274,11 +274,68 @@
     <div class="btns">
       <button id="btnRetry" class="primary">もう一度プレイ</button>
       <button id="btnHome" class="ghost">ホームへ戻る</button>
-      <button id="btnShareResult" class="ghost">結果をシェア／コピー</button>
+      <button id="btnShareResult" class="ghost common-x-share">Xでシェア</button><a class="common-ranking-link" href="https://chameleonjp-lab.github.io/chameleonjp_lab/ranking.html?game=hito_wo_yurusuna">ランキング</a>
       <button id="btnOtherResult" class="ghost">カメレオンJPの実験場へ</button>
     </div>
   </div>
 </section>
+
+<style>
+button.common-x-share { background:#000 !important; color:#fff !important; border:1px solid #555; white-space:normal; overflow-wrap:anywhere; min-height:44px; padding:12px 16px; line-height:1.4; }
+.common-ranking-link { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:44px; padding:12px 16px; border:1px solid currentColor; border-radius:10px; color:inherit; text-decoration:none; white-space:normal; overflow-wrap:anywhere; line-height:1.4; }
+#commonShareFallback { box-sizing:border-box; width:min(92vw,32rem); max-height:85dvh; overflow:auto; border:1px solid #777; border-radius:12px; padding:20px; background:#fff; color:#111; }
+#commonShareFallback::backdrop { background:#0009; }
+#commonShareFallback textarea { box-sizing:border-box; width:100%; min-height:160px; padding:10px; font:16px/1.5 sans-serif; color:#111; background:#fff; user-select:text; -webkit-user-select:text; }
+#commonShareFallback button { min-height:44px; margin:6px; padding:10px 16px; white-space:normal; color:#fff; background:#222; }
+</style>
+<dialog id="commonShareFallback" aria-labelledby="commonShareHeading">
+  <h2 id="commonShareHeading">共有文をコピー</h2>
+  <p>Xを開けない場合は、本文とURLをコピーして投稿できます。</p>
+  <textarea id="commonShareText" readonly aria-label="共有する本文とURL"></textarea>
+  <p id="commonShareStatus" role="status" aria-live="polite"></p>
+  <button id="commonShareCopy" type="button">コピー</button>
+  <button id="commonShareClose" type="button">閉じる</button>
+</dialog>
+<script>
+(() => {
+  'use strict';
+  const dialog = document.getElementById('commonShareFallback');
+  const field = document.getElementById('commonShareText');
+  const status = document.getElementById('commonShareStatus');
+  window.openGameShareX = (text) => {
+    const body = String(text);
+    const intent = new URL('https://x.com/intent/post');
+    intent.searchParams.set('text', body);
+    let popup;
+    try {
+      popup = window.open('', '_blank');
+      if (popup) {
+        popup.opener = null;
+        popup.location.replace(intent.href);
+        return;
+      }
+    } catch (_) {
+      try { if (popup) popup.close(); } catch (_) {}
+    }
+    field.value = body;
+    status.textContent = '';
+    if (!dialog.open) dialog.showModal();
+    field.focus();
+    field.select();
+  };
+  document.getElementById('commonShareCopy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(field.value);
+      status.textContent = 'コピーしました。投稿はXで確認してください。';
+    } catch (_) {
+      field.focus();
+      field.select();
+      status.textContent = '本文を選択して手動でコピーしてください。';
+    }
+  });
+  document.getElementById('commonShareClose').addEventListener('click', () => dialog.close());
+})();
+</script>
 
 <script>
 "use strict";
@@ -1283,7 +1340,7 @@ async function submitScore(r){
   });
   const rankingRows = await supabaseRpc("get_best_score_ranking", {
     p_game_slug: GAME_SLUG,
-    p_limit: 10
+    p_limit: 30
   });
   let text = "ランキング登録：登録しました";
   if(Array.isArray(submitRows) && submitRows[0]){
@@ -1301,7 +1358,7 @@ function renderRanking(rows, playerName){
   box.innerHTML = "";
   const title = document.createElement("div");
   title.className = "small";
-  title.textContent = "ランキング TOP10";
+  title.textContent = "ランキング 上位30名";
   box.appendChild(title);
   if(!Array.isArray(rows) || rows.length === 0){
     const empty = document.createElement("div");
@@ -1931,20 +1988,14 @@ window.addEventListener("popstate", () => {
   }
 });
 
-function shareText(text){
-  if(navigator.share){ navigator.share({text}).catch(()=>{}); return; }
-  navigator.clipboard?.writeText(text).then(()=>toast("コピーしました"),()=>toast("コピーできませんでした"));
-}
+function shareText(text){ window.openGameShareX(text); }
 function resultShareText(){
   if(!resultPayload) return `${GAME_TITLE}\n${PUBLIC_URL}`;
   return `${GAME_TITLE}で遊んだ！\n${resultPayload.cleared?'結果：クリア':'結果：敗北'}\nクリア波数：${resultPayload.clearWave}波\nスコア：${fmt(resultPayload.score)}点\n${PUBLIC_URL}`;
 }
 
 
-function detailedResultShareText(){
-  if(!resultPayload) return `${GAME_TITLE}\n${PUBLIC_URL}`;
-  return `${GAME_TITLE}で遊んだ！\n${resultPayload.playerName}の結果：${resultPayload.cleared?'クリア':'敗北'}\nクリア波数：${resultPayload.clearWave}波\nスコア：${fmt(resultPayload.score)}点\n撃破：${fmt(resultPayload.kills)}体 / 残り資金：${fmt(resultPayload.money)}\n${PUBLIC_URL}\n#ヒトを許すな #カメレオンJP`;
-}
+function detailedResultShareText(){ return resultShareText(); }
 
 function guideEscape(s){
   return String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
