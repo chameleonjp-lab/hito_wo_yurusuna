@@ -25,7 +25,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: python3 tools/check-site.py
-      - run: node tools/share.test.mjs
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - run: node node_modules/@playwright/test/cli.js install --with-deps chromium webkit
+      - run: npm run test:browser
       - name: Stage the validated public file
         run: python3 tools/check-site.py --out _site
       - name: Upload this commit's Pages artifact
@@ -64,3 +67,4 @@ jobs:
       - name: Deploy only the artifact from this validated commit
         id: deployment
         uses: actions/deploy-pages@v4
+
