@@ -30,3 +30,8 @@ test('ACK belongs to the frozen play and PostgreSQL integer contract before mark
  }
  for(const first of [0,-1,-2147483648,2147483647]){const {api}=setup(async()=>[{...base,result_first_score:first}]);const p=make();await api.submitResult(p);assert.equal(p.status,'sent');}
 });
+
+test('descending best cannot be below this submitted result, but signed first score remains valid',async()=>{
+ const row={accepted:true,result_normalized_name:'開始名',result_display_name:'開始名',result_first_score:-1,result_best_score:122,result_play_count:1,is_first_play:false,is_new_best:true,was_duplicate:false};
+ const {api}=setup(async()=>[row]);const p=make();await api.submitResult(p);assert.equal(p.status,'failed');row.result_best_score=123;await api.submitResult(p);assert.equal(p.status,'sent');
+});
