@@ -1,0 +1,13 @@
+{
+  "name": "hito-wo-yurusuna-validation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tools/*.test.mjs",
+    "test:browser": "node node_modules/@playwright/test/cli.js test"
+  },
+  "devDependencies": {
+    "happy-dom": "21.0.4",
+    "@playwright/test": "1.62.1"
+  }
+}
