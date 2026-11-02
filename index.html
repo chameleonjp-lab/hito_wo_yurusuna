@@ -1487,9 +1487,9 @@ async function submitResult(p) {
     });
     if(!Array.isArray(response) || response.length !== 1) throw new Error('Invalid receipt response');
     const receipt = response[0];
-    if(!receipt || receipt.accepted !== true || typeof receipt.result_normalized_name !== 'string' || !receipt.result_normalized_name
-      || typeof receipt.result_display_name !== 'string' || !receipt.result_display_name
-      || !['result_first_score','result_best_score','result_play_count'].every(key => Number.isSafeInteger(receipt[key]))
+    if(!receipt || receipt.accepted !== true || receipt.result_normalized_name !== p.name
+      || receipt.result_display_name !== p.name
+      || !['result_first_score','result_best_score','result_play_count'].every(key => Number.isSafeInteger(receipt[key]) && receipt[key] >= -2147483648 && receipt[key] <= 2147483647)
       || receipt.result_play_count < 1 || !['is_first_play','is_new_best','was_duplicate'].every(key => typeof receipt[key] === 'boolean')
       || (receipt.submission_id !== undefined && receipt.submission_id !== p.id)) throw new Error('Score not accepted');
     PlayReceipts.status(p,'sent');

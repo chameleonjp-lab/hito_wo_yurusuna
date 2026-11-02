@@ -141,3 +141,10 @@ X共有の修正理由: コピーのみ/OS共有の挙動を投稿確認画面�
 |13 PR・報告|既存Draft PR #5を継続|未完了を本人マージ待ちだけへ読み替えない|
 
 公開候補は引き続き単一 `index.html` のみ。依存パッケージ・テスト・fixture・資料は配信しない。PR検証用ブラウザテストはSupabase RPCを全てモックし、本番へ検証用の記録を作らない。
+
+
+## 2026-11-02 09:35 JST ACK follow-up
+
+Baseline PR5 head `5aa5ae9620419980fa4b3d75cfa26485f5b887fe`. An independently reproduced wrong-owner normal RPC acknowledgement previously marked the frozen result as sent. The client now checks both returned names against the start-time name and all integer response fields against PostgreSQL int4 bounds. It retains failed results and reuses the original submission payload on retry. Signed historical scores and first score zero remain valid; no participant identity, gameplay, database, or production record changes are included.
+
+The public submission regression failed before the change and now passes. Full local suite: 63/63; site validation and release staging pass. Runtime/browser fixtures now return the actual submitted name instead of unrelated `a`/`A`; an isolated wrong-owner acknowledgement browser scenario was added. Chromium/WebKit execution for this new head remains CI-pending, and is not iPhone device acceptance. Existing migration/identity/participant aggregation/production acceptance limits remain open.
