@@ -15,7 +15,13 @@
 <meta property="og:title" content="ヒトを許すな！">
 <meta property="og:description" content="ヒトを許さない動物たちが攻めてくる。武器を置いて👨‍🌾を守れ。全30波を守り切ればクリア！">
 <meta property="og:url" content="https://chameleonjp.codeberg.page/hito_wo_yurusuna/">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://chameleonjp-lab.github.io/hito_wo_yurusuna/assets/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ヒトを許すな！ ゲーム盤面を使った紹介画像">
+<meta name="twitter:image" content="https://chameleonjp-lab.github.io/hito_wo_yurusuna/assets/social-preview.png">
+<meta name="twitter:image:alt" content="ヒトを許すな！ ゲーム盤面を使った紹介画像">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
 <style>
   :root{
@@ -2177,11 +2183,11 @@ window.addEventListener("popstate", () => {
   }
 });
 
+const SHARE_TAGS = "#ヒトを許すな #ゲーム制作";
 function shareText(text){ window.openGameShareX(text); }
 function resultShareText(){
-  if(!resultPayload) return `${GAME_TITLE}
-${PUBLIC_URL}`;
-  return T.text("{p0}で遊んだ！\n{p1}\nクリア波数：{p2}波\nスコア：{p3}点\n{p4}",{p0:(GAME_TITLE),p1:(resultPayload.cleared?T.text("結果：クリア"):T.text("結果：敗北")),p2:(resultPayload.clearWave),p3:(fmt(resultPayload.score)),p4:(PUBLIC_URL)});
+  if(!resultPayload) return `${GAME_TITLE}\n${PUBLIC_URL}\n${SHARE_TAGS}`;
+  return T.text("{p0}で遊んだ！\n{p1}\nクリア波数：{p2}波\nスコア：{p3}点\n{p4}",{p0:(GAME_TITLE),p1:(resultPayload.cleared?T.text("結果：クリア"):T.text("結果：敗北")),p2:(resultPayload.clearWave),p3:(fmt(resultPayload.score)),p4:(PUBLIC_URL)}) + "\n" + SHARE_TAGS;
 }
 
 
@@ -2358,7 +2364,7 @@ $("btnRetry").onclick = () => startGame();
 $("btnHome").onclick = () => { game=null; showScreen("homeScreen"); renderSavedResults(); };
 $("btnOther").onclick = () => { location.href = "https://chameleonjp-lab.github.io/chameleonjp_lab/"; };
 $("btnOtherResult").onclick = () => { location.href = "https://chameleonjp-lab.github.io/chameleonjp_lab/"; };
-$("btnShareHome").onclick = () => shareText(T.text("{p0}\nヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。\n{p1}",{p0:(GAME_TITLE),p1:(PUBLIC_URL)}));
+$("btnShareHome").onclick = () => shareText(T.text("{p0}\nヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。\n{p1}",{p0:(GAME_TITLE),p1:(PUBLIC_URL)}) + "\n" + SHARE_TAGS);
 $("btnShareResult").onclick = () => shareText(detailedResultShareText());
 $("btnRules").onclick = () => openRulesModal();
 $("btnGuide").onclick = () => openGuideModal("towers");

@@ -3,13 +3,13 @@ name: Validate and deploy Pages
 on:
   pull_request:
   push:
-    branches: ["main"]
+    branches: ["main", "work/share-visibility-20261102"]
 
 permissions:
   contents: read
 
 concurrency:
-  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  group: pages-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'production' || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,16 +29,28 @@ jobs:
       - run: npm test
       - run: node node_modules/@playwright/test/cli.js install --with-deps chromium webkit
       - run: npm run test:browser
+      - name: Mobile share acceptance (Chromium)
+        run: BROWSER_ENGINE=chromium node tools/share-visual.cjs
+      - name: Mobile share acceptance (WebKit)
+        run: BROWSER_ENGINE=webkit node tools/share-visual.cjs
+      - name: Save mock-only layout evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: share-visibility
+          path: test-artifacts/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Stage the validated public file
         run: python3 tools/check-site.py --out _site
       - name: Upload this commit's Pages artifact
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
