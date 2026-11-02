@@ -1,4 +1,10 @@
+import fs from 'node:fs';
 import {test,expect} from '@playwright/test';
+const safeHtml=fs.readFileSync(new URL('../../index.html',import.meta.url),'utf8');
+test.beforeEach(async({context})=>{
+ await context.routeWebSocket('**/*',socket=>socket.close());
+ await context.route('**/*',route=>{const r=route.request(),u=new URL(r.url());if(u.origin==='http://127.0.0.1:4173'&&u.pathname==='/'&&['GET','HEAD'].includes(r.method()))return route.fulfill({contentType:'text/html; charset=utf-8',body:r.method()==='HEAD'?'':safeHtml});return route.abort();});
+});
 const languages=['ja','en','es','pt-BR','zh-Hans','fr','de','ko','ru','it','zh-Hant','id','tr','vi','th'];
 async function prepare(page,lang='ja'){
  await page.addInitScript(lang=>localStorage.setItem('hito_language_v1',lang),lang);
