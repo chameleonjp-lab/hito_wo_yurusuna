@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8'),source=html.slice(html.indexOf('let lastTouchEndAt = 0;'),html.indexOf('document.addEventListener("dblclick"'));
+test('actual touch guard discards <360ms repeat and accepts the next independent gesture',()=>{let now=1000,handler;vm.runInNewContext(source,{Date:{now:()=>now},document:{addEventListener:(name,cb)=>handler=cb}});function tap(){let prevented=false;handler({target:{closest:()=>false},preventDefault:()=>prevented=true,stopPropagation(){}});return prevented}assert.equal(tap(),false);now=1200;assert.equal(tap(),true);now=1560;assert.equal(tap(),false);});
