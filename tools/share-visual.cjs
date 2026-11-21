@@ -1,6 +1,6 @@
 // No server traffic: every HTTP request is fulfilled from fixed local bytes or aborted.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),engines=require('@playwright/test'),root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const origin='http://127.0.0.1:4173',publicUrl='https://chameleonjp.codeberg.page/hito_wo_yurusuna/',languages=['ja','en','es','pt-BR','zh-Hans','fr','de','ko','ru','it','zh-Hant','id','tr','vi','th'];
+const origin='http://127.0.0.1:4173',publicUrl='https://chameleonjp-lab.github.io/hito_wo_yurusuna/',languages=['ja','en','es','pt-BR','zh-Hans','fr','de','ko','ru','it','zh-Hant','id','tr','vi','th'];
 async function visible(page,selector){
  const e=page.locator(selector);assert.equal(await e.isVisible(),true);await e.scrollIntoViewIfNeeded();
  const a=await e.evaluate(el=>{
