@@ -173,11 +173,15 @@
   .card{padding-bottom:max(20px,env(safe-area-inset-bottom));}
   button,select{min-height:44px;}
   button{overflow-wrap:anywhere;}
+
+.home-lang-upper-left{display:flex;align-items:center;justify-content:flex-start;gap:8px;max-width:100%;flex-wrap:wrap;text-align:left;margin:0 0 8px}.home-lang-upper-left>div,.home-lang-upper-left>label:has(#languageSelect){display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:8px;max-width:100%;flex-wrap:wrap;width:auto;margin:0}.home-lang-upper-left #languageSelect{width:auto;min-height:44px;max-width:100%;box-sizing:border-box}.home-lang-upper-left #languageStatus{flex-basis:100%;margin:0}.home-lang-upper-left #languageStatus:empty{display:none}
 </style>
 </head>
 <body>
 <section id="homeScreen" class="screen home active">
   <div class="card">
+        <div class="home-lang-upper-left"><label for="languageSelect">言語</label>
+    <select id="languageSelect"></select><p id="languageStatus" class="small" role="status"></p></div>
     <h1>ヒトを許すな！</h1>
     <p>ヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。</p>
     <div class="infoBox">
@@ -185,8 +189,7 @@
       武器をタップすると、強化・売却・狙い方を変えられます。<br>
       敵が1体でも👨‍🌾に到達したら負け。30波を守り切れば勝ちです。
     </div>
-    <label for="languageSelect">言語</label>
-    <select id="languageSelect"></select><p id="languageStatus" class="small" role="status"></p>
+    
     <label for="nameInput">名前（任意・16文字まで）</label>
     <input id="nameInput" maxlength="16" placeholder="名前" autocomplete="nickname" aria-describedby="nameDisclosure">
     <p id="nameDisclosure" class="small">名前を入力すると、名前と記録がランキングに公開されます。空欄でも遊べます。</p>
