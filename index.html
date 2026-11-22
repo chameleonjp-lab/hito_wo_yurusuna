@@ -173,11 +173,15 @@
   .card{padding-bottom:max(20px,env(safe-area-inset-bottom));}
   button,select{min-height:44px;}
   button{overflow-wrap:anywhere;}
+
+.home-lang-upper-left{display:flex;align-items:center;justify-content:flex-start;gap:8px;max-width:100%;flex-wrap:wrap;text-align:left;margin:0 0 8px}.home-lang-upper-left>div,.home-lang-upper-left>label:has(#languageSelect){display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:8px;max-width:100%;flex-wrap:wrap;width:auto;margin:0}.home-lang-upper-left #languageSelect{width:auto;min-height:44px;max-width:100%;box-sizing:border-box}.home-lang-upper-left #languageStatus{flex-basis:100%;margin:0}.home-lang-upper-left #languageStatus:empty{display:none}
 </style>
 </head>
 <body>
 <section id="homeScreen" class="screen home active">
   <div class="card">
+        <div class="home-lang-upper-left"><label for="languageSelect">言語</label>
+    <select id="languageSelect"></select><p id="languageStatus" class="small" role="status"></p></div>
     <h1>ヒトを許すな！</h1>
     <p>ヒトを許さない動物たちが攻めてくる。武器を置いて、👨‍🌾を守れ。</p>
     <div class="infoBox">
@@ -185,8 +189,7 @@
       武器をタップすると、強化・売却・狙い方を変えられます。<br>
       敵が1体でも👨‍🌾に到達したら負け。30波を守り切れば勝ちです。
     </div>
-    <label for="languageSelect">言語</label>
-    <select id="languageSelect"></select><p id="languageStatus" class="small" role="status"></p>
+    
     <label for="nameInput">名前（任意・16文字まで）</label>
     <input id="nameInput" maxlength="16" placeholder="名前" autocomplete="nickname" aria-describedby="nameDisclosure">
     <p id="nameDisclosure" class="small">名前を入力すると、名前と記録がランキングに公開されます。空欄でも遊べます。</p>
@@ -319,9 +322,26 @@ const HITO_SOURCE_KEYS = {"ヒトを許すな！": "h_71db3c18d1c4", "ヒトを�
 /* Load HITO_CATALOGS and HITO_SOURCE_KEYS before this helper. Language changes only on home with a safe reload; never mutate an active play. */
 const T = (() => {
  const supported=['ja','en','es','pt-BR','zh-Hans','fr','de','ko','ru','it','zh-Hant','id','tr','vi','th'];
- function match(input){const v=String(input||'').toLowerCase();if(/^zh-(tw|hk|mo|hant)(-|$)/.test(v))return 'zh-Hant';if(/^zh(-|$)/.test(v))return 'zh-Hans';if(/^pt(-|$)/.test(v))return 'pt-BR';return supported.find(x=>x.toLowerCase()===v)||supported.find(x=>x===v.split('-')[0]);}
+ function match(input){
+  if(typeof input!=='string')return null;
+  const [base,...subtags]=input.trim().replaceAll('_','-').toLowerCase().split('-');
+  if(base==='zh'){
+   let traditionalRegion=false;
+   for(const subtag of subtags){
+    if(subtag.length===1)break;
+    if(subtag==='hans')return 'zh-Hans';
+    if(subtag==='hant')return 'zh-Hant';
+    if(['tw','hk','mo'].includes(subtag))traditionalRegion=true;
+   }
+   return traditionalRegion?'zh-Hant':'zh-Hans';
+  }
+  if(base==='pt')return 'pt-BR';
+  return supported.find(x=>x===base)||null;
+ }
  let saved;try{saved=localStorage.getItem('hito_language_v1');}catch(_){}
- const lang=match(saved)||(navigator.languages||[navigator.language]).map(match).find(Boolean)||'en';
+ const browser=typeof navigator==='undefined'?null:navigator;
+ const preferences=[...(browser?.languages||[]),browser?.language].filter(v=>typeof v==='string'&&v.trim());
+ const lang=match(saved)||preferences.map(match).find(Boolean)||(preferences.length?'en':'ja');
  function text(source,values={}){if(typeof source!=='string')return String(source??'');const core=source.trim(),key=HITO_SOURCE_KEYS[core],dict=HITO_CATALOGS[lang]||HITO_CATALOGS.en;let val=key?(dict[key]??HITO_CATALOGS.en[key]??core):core;val=val.replace(/\{p(\d+)\}/g,(m,i)=>{const v=Array.isArray(values)?values[+i]:values['p'+i];return v==null?m:String(v);});return source.slice(0,source.indexOf(core))+val+source.slice(source.indexOf(core)+core.length);}
  function staticDOM(root=document.body){const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let nodes=[];while(walker.nextNode()){const n=walker.currentNode;if(!n.parentElement?.closest('script,style,textarea'))nodes.push(n);}for(const n of nodes)n.nodeValue=text(n.nodeValue);for(const el of root.querySelectorAll('[aria-label],[placeholder],[title]'))for(const attr of ['aria-label','placeholder','title'])if(el.hasAttribute(attr))el.setAttribute(attr,text(el.getAttribute(attr)));document.documentElement.lang=lang;}
  const locale = {ja:'ja-JP',en:'en-US',es:'es-ES','pt-BR':'pt-BR','zh-Hans':'zh-CN',fr:'fr-FR',de:'de-DE',ko:'ko-KR',ru:'ru-RU',it:'it-IT','zh-Hant':'zh-TW',id:'id-ID',tr:'tr-TR',vi:'vi-VN',th:'th-TH'}[lang];
