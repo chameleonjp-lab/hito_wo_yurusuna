@@ -933,6 +933,8 @@ function startGame(){
   updateHud();
   countdown(() => {
     game.phase = "prep";
+      void import(/* @vite-ignore */ "https://chameleonjp-lab.github.io/chameleonjp_lab/play-start.js").then(module => module.recordPlayStart("hito_wo_yurusuna")).catch(() => {});
+
     game.nextTimer = 10;
     refreshUi();
   });
